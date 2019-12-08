@@ -1,0 +1,57 @@
+WHITESPACE = _{ " " | "\t" }
+
+COMMENT = _{ "%" ~ (!nl ~ ANY)* ~ nl }
+
+alpha = { 'a'..'z' | 'A'..'Z' }
+
+nl = _{ "\n"+ }
+
+ident = @{ alpha ~ (alpha | ASCII_DIGIT)* }
+
+atom = @{ "'" ~ ident }
+
+num_literal = @{ int ~ ("." ~ ASCII_DIGIT*)? ~ (^"e" ~ int)? }
+	int = { ("+" | "-")? ~ ASCII_DIGIT+ }
+
+num_operation = _{ add | subtract | multiply | divide }
+	add = { "+" }
+	subtract = { "-" }
+	multiply = { "*" }
+	divide = { "/" }
+
+num_compare = _{gt | lt | leq | geq | eq}
+	gt = { ">" }
+	lt = { "<" }
+	leq = { "<=" }
+	geq = { ">=" }
+	eq = { "==" }
+
+relation_call = { ident ~ "(" ~ arg_list ~ ")" }
+
+relation_decl = { ident ~ "(" ~ param_list ~ ")" }
+	param_list = { (const_term ~ ("," ~ const_term)*)? }
+	const_term = { num_literal | ident | atom }
+
+arg_list = { (expr ~ ("," ~ expr)*)? }
+
+expr_bin = { expr ~ num_compare ~ expr }
+expr = { term ~ (num_operation ~ term)* }
+term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident }
+
+simple_relation = { relation_decl ~ "~" ~ const_term}
+
+statement = _{ assignment | relate | expr_bin }
+	assignment = { const_term ~ "~" ~ expr }
+	relate = { "relate" ~ expr }
+
+relation_block = { 
+	relation_decl ~ nl? ~ block
+}
+
+block = {
+	"{" ~
+	(nl ~ statement)+ ~ nl? ~
+	"}"
+}
+
+program = _{ SOI ~ nl? ~ ((simple_relation | relation_block) ~ ";" ~ nl)+ ~ EOI}

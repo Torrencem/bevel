@@ -1,0 +1,25 @@
+
+fib(0) ~ 1;
+fib(1) ~ 1;
+fib(x) {
+	relate fib(x - 1) + fib(x - 2)
+};
+
+
+
+
+% swapped(x, y) ~ (x, y);
+
+parent('a) ~ 'b;
+parent('b) ~ 'c;
+parent('a) ~ 'd;
+
+grandparent(x) {
+	relate parent(parent(x))
+};
+
+ancestor(x) ~ x;
+ancestor(x) {
+	y ~ parent(x)
+	relate ancestor(y)
+};
