@@ -167,7 +167,7 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
         let name: String = format!("V{}", iter::repeat(())
             .map(|()| rng.sample(Alphanumeric))
             .filter(|c| !c.is_digit(10))
-            .take(5)
+            .take(6)
             .collect::<String>());
         match &self.contents {
             ExpressionContents::Const(_) => unreachable!(),

@@ -18,7 +18,7 @@ justabove(x) {
 };
 
 
-% swapped(x, y) ~ (x, y);
+swapped(x, y) ~ (y, x);
 
 parent('a) ~ 'b;
 parent('b) ~ 'c;
@@ -32,4 +32,13 @@ ancestor(x) ~ x;
 ancestor(x) {
 	y ~ parent(x)
 	relate ancestor(y)
+};
+
+branch('a) ~ ('x, 'y);
+branch('b) ~ ('x, 'z);
+
+doublebranch(x, y) {
+	(a, b) ~ branch(x)
+	(c, d) ~ branch(y)
+	relate a
 };

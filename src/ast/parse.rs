@@ -31,7 +31,27 @@ impl<'p> ParseNode<'p> for RelationNode<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self {
         let span: Span<'p> = pair.as_span();
         match pair.as_rule() {
-            Rule::simple_relation | Rule::relation_block => {
+            Rule::relation_block => {
+                let mut inners = pair.into_inner();
+                let relation_decl = inners.next().unwrap();
+                let mut relation_decl_breakdown = relation_decl.into_inner();
+                let relation: RelationId<'p> =
+                    RelationId::parse(relation_decl_breakdown.next().unwrap());
+                let params: ConstList<'p> =
+                    ConstList::parse(relation_decl_breakdown.next().unwrap());
+                
+                let block_or_const = inners.next().unwrap();
+                let block: RelationBlock<'p> =
+                    RelationBlock::parse(block_or_const);
+
+                RelationNode {
+                    span: span,
+                    relation: relation,
+                    params: params,
+                    block: block
+                }
+            },
+            Rule::simple_relation | Rule::multiple_relation => {
                 let mut inners = pair.into_inner();
                 let relation_decl = inners.next().unwrap();
                 let mut relation_decl_breakdown = relation_decl.into_inner();
@@ -66,9 +86,9 @@ impl<'p> ParseNode<'p> for RelationBlock<'p> {
                 
                 RelationBlock::Block(block)
             },
-            Rule::const_term => {
-                let const_node: ConstantNode<'p> =
-                    ConstantNode::parse(pair);
+            Rule::const_term | Rule::param_list => {
+                let const_node: ConstList<'p> =
+                    ConstList::parse(pair);
 
                 RelationBlock::Const(const_node)
             },
@@ -110,6 +130,16 @@ impl<'p> ParseNode<'p> for ConstList<'p> {
                 ConstList {
                     span: span,
                     constants: constants,
+                }
+            },
+            Rule::const_term => {
+                let mut inner_const_term = pair.into_inner();
+                let constant: ConstantNode<'p> =
+                    ConstantNode::parse(inner_const_term.next().unwrap());
+                
+                ConstList {
+                    span: span,
+                    constants: vec![constant],
                 }
             },
             x => panic!("unexpected: {:?}", x),
@@ -165,7 +195,7 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                     Rule::num_literal => {
                         ConstantContents::Literal(ident)
                     },
-                    x => panic!("unexpected: {:?}", x),
+                    x => panic!("unexpected: {:?} | {:?} | {:?}", x, pair, pair.as_span().lines().collect::<Vec<_>>()),
                 }
             }
         }
@@ -175,7 +205,7 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
 impl<'p> ParseNode<'p> for StatementNode<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self {
         match pair.as_rule() {
-            Rule::assignment => {
+            Rule::assignment | Rule::mul_assignment => {
                 StatementNode::Assignment(AssignmentNode::parse(pair))
             },
             Rule::relate => {
@@ -197,6 +227,24 @@ impl<'p> ParseNode<'p> for AssignmentNode<'p> {
                 let mut innerds = pair.into_inner();
                 let constant_term = innerds.next().unwrap();
                 let lhs: ConstantNode<'p> = ConstantNode::parse(constant_term);
+                let expr_term = innerds.next().unwrap();
+                let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term);
+                AssignmentNode {
+                    span: span,
+                    lhs: ConstList {
+                        span: lhs.span.clone(),
+                        constants: vec![ConstantNode {
+                            span: lhs.span,
+                            contents: lhs.contents,
+                        }],
+                    },
+                    rhs: rhs,
+                }
+            },
+            Rule::mul_assignment => {
+                let mut innerds = pair.into_inner();
+                let constant_term = innerds.next().unwrap();
+                let lhs: ConstList<'p> = ConstList::parse(constant_term);
                 let expr_term = innerds.next().unwrap();
                 let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term);
                 AssignmentNode {

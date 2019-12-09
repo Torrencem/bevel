@@ -20,7 +20,7 @@ pub struct RelationNode<'p> {
 
 #[derive(Debug)]
 pub enum RelationBlock<'p> {
-    Const(ConstantNode<'p>),
+    Const(ConstList<'p>),
     Block(BlockNode<'p>),
 }
 
@@ -65,7 +65,7 @@ pub enum StatementNode<'p> {
 #[derive(Debug)]
 pub struct AssignmentNode<'p> {
     pub span: Span<'p>,
-    pub lhs: ConstantNode<'p>,
+    pub lhs: ConstList<'p>,
     pub rhs: ExpressionNode<'p>,
 }
 

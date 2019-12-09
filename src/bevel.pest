@@ -38,10 +38,13 @@ expr_bin = { expr ~ num_compare ~ expr }
 expr = { term ~ (num_operation ~ term)* }
 term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident }
 
-simple_relation = { relation_decl ~ "~" ~ const_term}
+simple_relation = { relation_decl ~ "~" ~ const_term }
 
-statement = _{ assignment | relate | expr_bin }
+multiple_relation = { relation_decl ~ "~" ~ "(" ~ param_list ~ ")" }
+
+statement = _{ assignment | mul_assignment | relate | expr_bin }
 	assignment = { const_term ~ "~" ~ expr }
+	mul_assignment = { "(" ~ param_list ~ ")" ~ "~" ~ expr }
 	relate = { "relate" ~ expr }
 
 relation_block = { 
@@ -54,4 +57,4 @@ block = {
 	"}"
 }
 
-program = _{ SOI ~ nl? ~ ((simple_relation | relation_block) ~ ";" ~ nl)+ ~ EOI}
+program = _{ SOI ~ nl? ~ ((simple_relation | relation_block | multiple_relation) ~ ";" ~ nl)+ ~ EOI}
