@@ -44,8 +44,11 @@ calc(x) {
 	relate y
 };
 
-compute() {
-	relate fib(100)
+compute(x) ~ (x, 100);
+
+main() {
+	(x, y) ~ compute(10)
+	relate x + y
 };
 
 %just([x]) ~ x;
