@@ -121,7 +121,29 @@ impl<'p> PrologPrint for StatementNode<'p> {
             StatementNode::Assignment(anode) => anode.prolog_print(w),
             StatementNode::Relate(rnode) => rnode.prolog_print(w),
             StatementNode::BinaryFact(bfnode) => bfnode.prolog_print(w),
+            StatementNode::Relation(rnode) => rnode.prolog_print(w),
         }
+    }
+}
+
+impl<'p> PrologPrint for RelationCallNode<'p> {
+    fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
+            let mut arg_names = Vec::with_capacity(self.args.len());
+            for arg in self.args.iter() {
+                arg_names.push(arg.prolog_print_val(w)?);
+            }
+            self.rel.prolog_print(w)?;
+            write!(w, "(")?;
+            let mut first = true;
+            for arg in arg_names.iter() {
+                if !first {
+                    write!(w, ", ")?;
+                } else {
+                    first = false;
+                }
+                write!(w, "{}", arg)?;
+            }
+            write!(w, ")")
     }
 }
 

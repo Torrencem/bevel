@@ -42,7 +42,7 @@ simple_relation = { relation_decl ~ "~" ~ const_term }
 
 multiple_relation = { relation_decl ~ "~" ~ "(" ~ param_list ~ ")" }
 
-statement = _{ assignment | mul_assignment | relate | mul_relate | expr_bin }
+statement = _{ assignment | mul_assignment | relate | mul_relate | expr_bin | relation_call }
 	assignment = { const_term ~ "~" ~ expr }
 	mul_assignment = { "(" ~ param_list ~ ")" ~ "~" ~ expr }
 	relate = { "relate" ~ expr }

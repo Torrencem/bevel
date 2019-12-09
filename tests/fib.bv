@@ -49,6 +49,8 @@ compute(x) ~ (x, 100);
 main() {
 	(x, y) ~ compute(10)
 	(z, w) ~ split(x)
+	write(z)
+	write(w)
 	relate z + w + y
 };
 

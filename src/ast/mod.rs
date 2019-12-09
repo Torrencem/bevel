@@ -70,6 +70,7 @@ pub enum StatementNode<'p> {
     Assignment(AssignmentNode<'p>),
     Relate(RelateNode<'p>),
     BinaryFact(BinaryFactNode<'p>),
+    Relation(RelationCallNode<'p>),
 }
 
 #[derive(Debug)]
@@ -120,6 +121,12 @@ pub enum ExpressionContents<'p> {
         rel: RelationId<'p>,
         args: Vec<ExpressionNode<'p>>,
     },
+}
+
+#[derive(Debug)]
+pub struct RelationCallNode<'p> {
+    pub rel: RelationId<'p>,
+    pub args: Vec<ExpressionNode<'p>>,
 }
 
 #[derive(Debug)]

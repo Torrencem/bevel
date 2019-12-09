@@ -214,9 +214,38 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             Rule::expr_bin => {
                 StatementNode::BinaryFact(BinaryFactNode::parse(pair))
             },
+            Rule::relation_call => {
+                StatementNode::Relation(RelationCallNode::parse(pair))
+            },
             x => panic!("unexpected: {:?}", x)
         }
     }
+}
+
+impl<'p> ParseNode<'p> for RelationCallNode<'p> {
+    fn parse(pair: Pair<'p, Rule>) -> Self {
+                match pair.as_rule() {
+                        Rule::relation_call => {
+                            let mut innerds = pair.into_inner();
+                            let ident_pair = innerds.next().unwrap();
+                            let ident = RelationId::parse(ident_pair);
+                            
+                            let arg_list = innerds.next().unwrap();
+                            assert!(arg_list.as_rule() == Rule::arg_list);
+                            let innerds = arg_list.into_inner();
+
+                            let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
+                                ExpressionNode::parse(pair)
+                            }).collect();
+                            
+                            RelationCallNode {
+                                rel: ident,
+                                args: args,
+                            }
+                        },
+                        x => panic!("unexpected: {:?}", x),
+                }
+        }
 }
 
 impl<'p> ParseNode<'p> for AssignmentNode<'p> {
