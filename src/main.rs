@@ -45,7 +45,7 @@ fn main() {
     
     let mut s = String::new();
 
-    prog.prolog_print(&mut s);
+    prog.prolog_print(&mut s).expect("IO error when writing to buffer");
 
     println!("{}", s);
 }

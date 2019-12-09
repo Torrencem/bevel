@@ -94,8 +94,14 @@ impl<'p> PrologPrint for BlockNode<'p> {
 impl<'p> PrologPrint for ConstantNode<'p> {
     fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
         match &self.contents {
-            ConstantContents::Atom(x) => write!(w, "atom{}", x[1..].to_string()),
-            ConstantContents::Var(x) => write!(w, "Var{}", x),
+            ConstantContents::Atom(x) => {
+                if x.chars().nth(1).unwrap().is_lowercase() {
+                    write!(w, "{}", x[1..].to_string())
+                } else {
+                    write!(w, "atom_{}", x[1..].to_string())
+                }
+            },
+            ConstantContents::Var(x) => write!(w, "Var_{}", x),
             ConstantContents::Literal(x) => write!(w, "{}", x),
         }
     }
