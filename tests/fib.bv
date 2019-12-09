@@ -7,7 +7,9 @@ fib(x) {
 };
 
 myfun(0) ~ 0;
+myfun(0) ~ 1;
 myfun(x) {
+	x > 0
 	y ~ myfun(x - 1)
 	relate y + 1
 };
@@ -41,3 +43,17 @@ calc(x) {
 	y ~ 10 * fib(x) + 10
 	relate y
 };
+
+compute() {
+	relate fib(100)
+};
+
+%just([x]) ~ x;
+
+%head([h, t]) ~ h;
+
+%flip([a, b]) ~ [b, a];
+
+%reverse([h:tail]) {
+%	relate append(reverse(tail), [h])
+%};

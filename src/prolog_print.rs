@@ -32,14 +32,20 @@ impl<'p> PrologPrint for RelationNode<'p> {
         self.relation.prolog_print(w)?;
         write!(w, "(")?;
         self.params.prolog_print(w)?;
+        let pcomma = self.params.constants.len() > 0;
         match &self.block {
             RelationBlock::Const(cnode) => {
-                write!(w, ", ")?;
+                if pcomma {
+                    write!(w, ", ")?;
+                }
                 cnode.prolog_print(w)?;
                 write!(w, ")")?;
             },
             RelationBlock::Block(block) => {
-                write!(w, ", Result) :- ")?;
+                if pcomma {
+                    write!(w, ", ")?;
+                }
+                write!(w, "Result) :- ")?;
                 block.prolog_print(w)?;
             }
         }
