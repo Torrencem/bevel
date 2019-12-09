@@ -45,7 +45,15 @@ impl<'p> PrologPrint for RelationNode<'p> {
                 if pcomma {
                     write!(w, ", ")?;
                 }
-                write!(w, "Result) :- ")?;
+                let num_results = find_num_results(block);
+                for i in 0..num_results {
+                    if i == num_results - 1 {
+                        write!(w, "Result{})", i)?;
+                    } else {
+                        write!(w, "Result{}, ", i)?;
+                    }
+                }
+                write!(w, " :- ")?;
                 block.prolog_print(w)?;
             }
         }
@@ -157,8 +165,18 @@ impl<'p> PrologPrint for AssignmentNode<'p> {
 
 impl<'p> PrologPrint for RelateNode<'p> {
     fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
-        let val = self.result.prolog_print_val(w)?;
-        write!(w, "Result = {}", val)
+        let mut res: Vec<String> = Vec::with_capacity(self.result.len());
+        for val in self.result.iter() {
+            res.push(val.prolog_print_val(w)?);
+        }
+        for i in 0..self.result.len() {
+            if i == self.result.len() - 1 {
+                write!(w, "Result{} = {}", i, res[i])?;
+            } else {
+                write!(w, "Result{} = {}, ", i, res[i])?;
+            }
+        }
+        Ok(())
     }
 }
 

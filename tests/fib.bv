@@ -48,7 +48,12 @@ compute(x) ~ (x, 100);
 
 main() {
 	(x, y) ~ compute(10)
-	relate x + y
+	(z, w) ~ split(x)
+	relate z + w + y
+};
+
+split(x) {
+	relate (x + 1, x - 1)
 };
 
 %just([x]) ~ x;

@@ -208,7 +208,7 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             Rule::assignment | Rule::mul_assignment => {
                 StatementNode::Assignment(AssignmentNode::parse(pair))
             },
-            Rule::relate => {
+            Rule::relate | Rule::mul_relate => {
                 StatementNode::Relate(RelateNode::parse(pair))
             },
             Rule::expr_bin => {
@@ -264,12 +264,24 @@ impl<'p> ParseNode<'p> for RelateNode<'p> {
         match pair.as_rule() {
             Rule::relate => {
                 let expr_term = pair.into_inner().next().unwrap();
-                let result: ExpressionNode<'p> =
+                let result: ExpressionNode<'p> = 
                     ExpressionNode::parse(expr_term);
+                RelateNode {
+                    span: span,
+                    result: vec![result]
+                }
+            },
+            Rule::mul_relate => {
+                let expr_term = pair.into_inner().next().unwrap();
+                let exprs = expr_term.into_inner();
+                let results: Vec<ExpressionNode<'p>> =
+                    exprs
+                    .map(|pair| { ExpressionNode::parse(pair) })
+                    .collect();
 
                 RelateNode {
                     span: span,
-                    result: result
+                    result: results
                 }
             }
             x => panic!("unexpected: {:?}", x)

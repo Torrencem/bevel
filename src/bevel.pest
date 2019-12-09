@@ -42,10 +42,12 @@ simple_relation = { relation_decl ~ "~" ~ const_term }
 
 multiple_relation = { relation_decl ~ "~" ~ "(" ~ param_list ~ ")" }
 
-statement = _{ assignment | mul_assignment | relate | expr_bin }
+statement = _{ assignment | mul_assignment | relate | mul_relate | expr_bin }
 	assignment = { const_term ~ "~" ~ expr }
 	mul_assignment = { "(" ~ param_list ~ ")" ~ "~" ~ expr }
 	relate = { "relate" ~ expr }
+	mul_relate = { "relate" ~ mul_expr }
+	mul_expr = { (( "(" ~ expr ~ ("," ~ expr)*) ~ ")" ) | ( expr ~ ("," ~ expr)* ) }
 
 relation_block = { 
 	relation_decl ~ nl? ~ block

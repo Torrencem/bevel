@@ -42,6 +42,16 @@ pub struct BlockNode<'p> {
     pub statements: Vec<StatementNode<'p>>,
 }
 
+pub fn find_num_results<'p>(bnode: &BlockNode<'p>) -> usize {
+    for statement in bnode.statements.iter() {
+        if let StatementNode::Relate(rnode) = statement {
+            // TODO: Maybe check consistency
+            return rnode.result.len();
+        }
+    }
+    panic!("block without relate statement! {}", bnode.span.as_str());
+}
+
 #[derive(Debug)]
 pub struct ConstantNode<'p> {
     pub span: Span<'p>,
@@ -72,7 +82,7 @@ pub struct AssignmentNode<'p> {
 #[derive(Debug)]
 pub struct RelateNode<'p> {
     pub span: Span<'p>,
-    pub result: ExpressionNode<'p>,
+    pub result: Vec<ExpressionNode<'p>>,
 }
 
 #[derive(Debug)]
