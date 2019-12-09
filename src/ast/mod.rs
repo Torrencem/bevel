@@ -7,15 +7,15 @@ use pest::Span;
 
 #[derive(Debug)]
 pub struct ProgramNode<'p> {
-    relations: Vec<RelationNode<'p>>,
+    pub relations: Vec<RelationNode<'p>>,
 }
 
 #[derive(Debug)]
 pub struct RelationNode<'p> {
-    span: Span<'p>,
-    relation: RelationId<'p>,
-    params: ConstList<'p>,
-    block: RelationBlock<'p>,
+    pub span: Span<'p>,
+    pub relation: RelationId<'p>,
+    pub params: ConstList<'p>,
+    pub block: RelationBlock<'p>,
 }
 
 #[derive(Debug)]
@@ -26,26 +26,26 @@ pub enum RelationBlock<'p> {
 
 #[derive(Debug)]
 pub struct RelationId<'p> {
-    span: Span<'p>,
-    name: String,
+    pub span: Span<'p>,
+    pub name: String,
 }
 
 #[derive(Debug)]
 pub struct ConstList<'p> {
-    span: Span<'p>,
-    constants: Vec<ConstantNode<'p>>,
+    pub span: Span<'p>,
+    pub constants: Vec<ConstantNode<'p>>,
 }
 
 #[derive(Debug)]
 pub struct BlockNode<'p> {
-    span: Span<'p>,
-    statements: Vec<StatementNode<'p>>,
+    pub span: Span<'p>,
+    pub statements: Vec<StatementNode<'p>>,
 }
 
 #[derive(Debug)]
 pub struct ConstantNode<'p> {
-    span: Span<'p>,
-    contents: ConstantContents,
+    pub span: Span<'p>,
+    pub contents: ConstantContents,
 }
 
 #[derive(Debug)]
@@ -64,23 +64,23 @@ pub enum StatementNode<'p> {
 
 #[derive(Debug)]
 pub struct AssignmentNode<'p> {
-    span: Span<'p>,
-    lhs: ConstantNode<'p>,
-    rhs: ExpressionNode<'p>,
+    pub span: Span<'p>,
+    pub lhs: ConstantNode<'p>,
+    pub rhs: ExpressionNode<'p>,
 }
 
 #[derive(Debug)]
 pub struct RelateNode<'p> {
-    span: Span<'p>,
-    result: ExpressionNode<'p>,
+    pub span: Span<'p>,
+    pub result: ExpressionNode<'p>,
 }
 
 #[derive(Debug)]
 pub struct BinaryFactNode<'p> {
-    span: Span<'p>,
-    lhs: ExpressionNode<'p>,
-    rhs: ExpressionNode<'p>,
-    op: BinaryFactOperation,
+    pub span: Span<'p>,
+    pub lhs: ExpressionNode<'p>,
+    pub rhs: ExpressionNode<'p>,
+    pub op: BinaryFactOperation,
 }
 
 #[derive(Debug)]
@@ -94,8 +94,8 @@ pub enum BinaryFactOperation {
 
 #[derive(Debug)]
 pub struct ExpressionNode<'p> {
-    span: Span<'p>,
-    contents: ExpressionContents<'p>,
+    pub span: Span<'p>,
+    pub contents: ExpressionContents<'p>,
 }
 
 #[derive(Debug)]

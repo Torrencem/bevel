@@ -2,10 +2,20 @@
 fib(0) ~ 1;
 fib(1) ~ 1;
 fib(x) {
+	x > 1
 	relate fib(x - 1) + fib(x - 2)
 };
 
+myfun(0) ~ 0;
+myfun(x) {
+	y ~ myfun(x - 1)
+	relate y + 1
+};
 
+justabove(x) {
+	z ~ fib(5)
+	relate x + z
+};
 
 
 % swapped(x, y) ~ (x, y);
