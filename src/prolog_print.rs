@@ -40,7 +40,7 @@ impl<'p> PrologPrint for RelationNode<'p> {
             },
             RelationBlock::Block(block) => {
                 write!(w, ", Result) :- ")?;
-                let related = block.prolog_print(w)?;
+                block.prolog_print(w)?;
             }
         }
         Ok(())
@@ -88,8 +88,8 @@ impl<'p> PrologPrint for BlockNode<'p> {
 impl<'p> PrologPrint for ConstantNode<'p> {
     fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
         match &self.contents {
-            ConstantContents::Atom(x) => write!(w, "a{}", x[1..].to_string()),
-            ConstantContents::Var(x) => write!(w, "V{}", x),
+            ConstantContents::Atom(x) => write!(w, "atom{}", x[1..].to_string()),
+            ConstantContents::Var(x) => write!(w, "Var{}", x),
             ConstantContents::Literal(x) => write!(w, "{}", x),
         }
     }
@@ -107,29 +107,38 @@ impl<'p> PrologPrint for StatementNode<'p> {
 
 impl<'p> PrologPrint for AssignmentNode<'p> {
     fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
-        if let ExpressionContents::Call {rel, args} = &self.rhs.contents {
-            let mut arg_names = Vec::with_capacity(args.len());
-            for arg in args.iter() {
-                arg_names.push(arg.prolog_print_val(w)?);
-            }
-            rel.prolog_print(w)?;
-            write!(w, "(")?;
-            let mut first = true;
-            for arg in arg_names.iter() {
+        match &self.rhs.contents {
+            ExpressionContents::Call {rel, args} => {
+                let mut arg_names = Vec::with_capacity(args.len());
+                for arg in args.iter() {
+                    arg_names.push(arg.prolog_print_val(w)?);
+                }
+                rel.prolog_print(w)?;
+                write!(w, "(")?;
+                let mut first = true;
+                for arg in arg_names.iter() {
+                    if !first {
+                        write!(w, ", ")?;
+                    } else {
+                        first = false;
+                    }
+                    write!(w, "{}", arg)?;
+                }
                 if !first {
                     write!(w, ", ")?;
-                } else {
-                    first = false;
                 }
-                write!(w, "{}", arg)?;
+                self.lhs.prolog_print(w)?;
+                write!(w, ")")
+            },
+            _ => {
+                let list = &self.lhs.constants;
+                if list.len() > 1 {
+                    panic!("cannot assign to tuple: {}", self.span.as_str());
+                }
+                let result = self.rhs.prolog_print_val(w)?;
+                list[0].prolog_print(w)?;
+                write!(w, " = {}", result)
             }
-            if !first {
-                write!(w, ", ")?;
-            }
-            self.lhs.prolog_print(w)?;
-            write!(w, ")")
-        } else {
-            panic!("TODO")
         }
     }
 }
@@ -164,7 +173,7 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
             return Ok(s);
         }
         let mut rng = thread_rng();
-        let name: String = format!("V{}", iter::repeat(())
+        let name: String = format!("Tmp{}", iter::repeat(())
             .map(|()| rng.sample(Alphanumeric))
             .filter(|c| !c.is_digit(10))
             .take(6)

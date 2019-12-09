@@ -34,11 +34,10 @@ ancestor(x) {
 	relate ancestor(y)
 };
 
-branch('a) ~ ('x, 'y);
-branch('b) ~ ('x, 'z);
+branch('a, 'c) ~ ('x, 'y);
+branch('b, 'c) ~ ('x, 'z);
 
-doublebranch(x, y) {
-	(a, b) ~ branch(x)
-	(c, d) ~ branch(y)
-	relate a
+calc(x) {
+	y ~ 10 * fib(x) + 10
+	relate y
 };
