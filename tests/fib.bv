@@ -58,11 +58,18 @@ split(x) {
 	relate (x + 1, x - 1)
 };
 
-%just([x]) ~ x;
+just([x]) ~ x;
 
-%head([h, t]) ~ h;
+head([h, t]) ~ h;
 
-%flip([a, b]) ~ [b, a];
+flip([a, b]) ~ [b, a];
+
+newmain() {
+	x ~ [1, 2]
+	myotherlist ~ [x, head(x), 100, [20, 30]]
+	mythirdlist ~ [[[[[[myotherlist]]]]]]
+	relate mythirdlist
+};
 
 %reverse([h:tail]) {
 %	relate append(reverse(tail), [h])

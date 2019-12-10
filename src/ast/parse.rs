@@ -195,6 +195,13 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                     Rule::num_literal => {
                         ConstantContents::Literal(ident)
                     },
+                    Rule::list_literal => {
+                        let innerds = pair.into_inner();
+                        let contents: Vec<ConstantNode<'p>> =
+                            innerds.map(|pair| ConstantNode::parse(pair))
+                            .collect();
+                        ConstantContents::List(contents)
+                    },
                     x => panic!("unexpected: {:?} | {:?} | {:?}", x, pair, pair.as_span().lines().collect::<Vec<_>>()),
                 }
             }
@@ -383,6 +390,15 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                             ExpressionContents::Call {
                                 rel: ident,
                                 args: args,
+                            }
+                        },
+                        Rule::expr_list => {
+                            let innerds = pair.into_inner();
+                            let vals: Vec<ExpressionNode<'p>> =
+                                innerds.map(|pair| ExpressionNode::parse(pair))
+                                .collect();
+                            ExpressionContents::List {
+                                vals: vals
                             }
                         },
                         _ => {

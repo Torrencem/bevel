@@ -55,14 +55,15 @@ pub fn find_num_results<'p>(bnode: &BlockNode<'p>) -> usize {
 #[derive(Debug)]
 pub struct ConstantNode<'p> {
     pub span: Span<'p>,
-    pub contents: ConstantContents,
+    pub contents: ConstantContents<'p>,
 }
 
 #[derive(Debug)]
-pub enum ConstantContents {
+pub enum ConstantContents<'p> {
     Atom(String),
     Var(String),
     Literal(String),
+    List(Vec<ConstantNode<'p>>),
 }
 
 #[derive(Debug)]
@@ -120,6 +121,9 @@ pub enum ExpressionContents<'p> {
     Call {
         rel: RelationId<'p>,
         args: Vec<ExpressionNode<'p>>,
+    },
+    List {
+        vals: Vec<ExpressionNode<'p>>,
     },
 }
 

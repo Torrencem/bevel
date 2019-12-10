@@ -30,13 +30,15 @@ relation_call = { ident ~ "(" ~ arg_list ~ ")" }
 
 relation_decl = { ident ~ "(" ~ param_list ~ ")" }
 	param_list = { (const_term ~ ("," ~ const_term)*)? }
-	const_term = { num_literal | ident | atom }
+	const_term = { num_literal | ident | atom | list_literal }
+	list_literal = { "[" ~ (const_term ~ ("," ~ const_term)*)? ~ "]" }
 
 arg_list = { (expr ~ ("," ~ expr)*)? }
 
+expr_list = { "[" ~ (expr ~ ("," ~ expr)*)? ~ "]" }
 expr_bin = { expr ~ num_compare ~ expr }
 expr = { term ~ (num_operation ~ term)* }
-term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident }
+term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident | expr_list }
 
 simple_relation = { relation_decl ~ "~" ~ const_term }
 

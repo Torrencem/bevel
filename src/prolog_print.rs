@@ -111,6 +111,19 @@ impl<'p> PrologPrint for ConstantNode<'p> {
             },
             ConstantContents::Var(x) => write!(w, "Var_{}", x),
             ConstantContents::Literal(x) => write!(w, "{}", x),
+            ConstantContents::List(l) => {
+                write!(w, "[")?;
+                let mut first = true;
+                for c in l.iter() {
+                    if first {
+                        first = false;
+                    } else {
+                        write!(w, ", ")?;
+                    }
+                    c.prolog_print(w)?;
+                }
+                write!(w, "]")
+            },
         }
     }
 }
@@ -264,6 +277,22 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
                 }
                 write!(w, "{}", name)?;
                 write!(w, ")")?;
+            },
+            ExpressionContents::List { vals } => {
+                let mut names: Vec<String> =
+                    Vec::with_capacity(vals.len());
+                for val in vals {
+                    names.push(val.prolog_print_val(w)?);
+                }
+                write!(w, "{} = [", name)?;
+                for i in 0..vals.len() {
+                    if i == vals.len() - 1 {
+                        write!(w, "{}", names[i])?;
+                    } else {
+                        write!(w, "{}, ", names[i])?;
+                    }
+                }
+                write!(w, "]")?;
             },
         }
         write!(w, ",\n\t")?;
