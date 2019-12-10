@@ -66,11 +66,16 @@ flip([a, b]) ~ [b, a];
 
 newmain() {
 	x ~ [1, 2]
-	myotherlist ~ [x, head(x), 100, [20, 30]]
-	mythirdlist ~ [[[[[[myotherlist]]]]]]
-	relate mythirdlist
+	myotherlist ~ [x, head(x), 100, [[20], 30]]
+	relate myotherlist
 };
 
-%reverse([h:tail]) {
-%	relate append(reverse(tail), [h])
-%};
+reverse([]) ~ [];
+reverse((h:tail)) {
+	relate append(reverse(tail), [h])
+};
+
+zip([], []) ~ [];
+zip((h:tail), (h2:tail2)) {
+	relate (h : h2 : zip(tail, tail2))
+};

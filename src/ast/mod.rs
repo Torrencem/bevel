@@ -64,6 +64,7 @@ pub enum ConstantContents<'p> {
     Var(String),
     Literal(String),
     List(Vec<ConstantNode<'p>>),
+    ConsList(Vec<ConstantNode<'p>>),
 }
 
 #[derive(Debug)]
@@ -102,6 +103,7 @@ pub enum BinaryFactOperation {
     Leq,
     Geq,
     Equ,
+    Neq,
 }
 
 #[derive(Debug)]
@@ -123,6 +125,9 @@ pub enum ExpressionContents<'p> {
         args: Vec<ExpressionNode<'p>>,
     },
     List {
+        vals: Vec<ExpressionNode<'p>>,
+    },
+    ConsList {
         vals: Vec<ExpressionNode<'p>>,
     },
 }

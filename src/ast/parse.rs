@@ -202,6 +202,13 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                             .collect();
                         ConstantContents::List(contents)
                     },
+                    Rule::conslist_literal => {
+                        let innerds = pair.into_inner();
+                        let contents: Vec<ConstantNode<'p>> =
+                            innerds.map(|pair| ConstantNode::parse(pair))
+                            .collect();
+                        ConstantContents::ConsList(contents)
+                    },
                     x => panic!("unexpected: {:?} | {:?} | {:?}", x, pair, pair.as_span().lines().collect::<Vec<_>>()),
                 }
             }
@@ -341,6 +348,7 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
                     Rule::leq => BinaryFactOperation::Leq,
                     Rule::geq => BinaryFactOperation::Geq,
                     Rule::eq => BinaryFactOperation::Equ,
+                    Rule::neq => BinaryFactOperation::Neq,
                     x => panic!("unexpected: {:?}", x),
                 };
                 let right_expr = innerds.next().unwrap();
@@ -398,6 +406,15 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                                 innerds.map(|pair| ExpressionNode::parse(pair))
                                 .collect();
                             ExpressionContents::List {
+                                vals: vals
+                            }
+                        },
+                        Rule::expr_conslist => {
+                            let innerds = pair.into_inner();
+                            let vals: Vec<ExpressionNode<'p>> =
+                                innerds.map(|pair| ExpressionNode::parse(pair))
+                                .collect();
+                            ExpressionContents::ConsList {
                                 vals: vals
                             }
                         },

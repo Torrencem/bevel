@@ -124,6 +124,21 @@ impl<'p> PrologPrint for ConstantNode<'p> {
                 }
                 write!(w, "]")
             },
+            ConstantContents::ConsList(l) => {
+                write!(w, "[")?;
+                let mut first = true;
+                for i in 0..(l.len() - 1) {
+                    if first {
+                        first = false;
+                    } else {
+                        write!(w, ", ")?;
+                    }
+                    l[i].prolog_print(w)?;
+                }
+                write!(w, "|")?;
+                l[l.len() - 1].prolog_print(w)?;
+                write!(w, "]")
+            }
         }
     }
 }
@@ -224,7 +239,8 @@ impl<'p> PrologPrint for BinaryFactNode<'p> {
             BinaryFactOperation::Lt => "<",
             BinaryFactOperation::Leq => "=<",
             BinaryFactOperation::Geq => ">=",
-            BinaryFactOperation::Equ => "=",
+            BinaryFactOperation::Equ => "=:=",
+            BinaryFactOperation::Neq => "\\==",
         };
         write!(w, "{} {} {}", leftval, op, rightval)
     }
@@ -293,6 +309,24 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
                     }
                 }
                 write!(w, "]")?;
+            },
+            ExpressionContents::ConsList { vals } => {
+                let mut names: Vec<String> =
+                    Vec::with_capacity(vals.len());
+                for val in vals {
+                    names.push(val.prolog_print_val(w)?);
+                }
+                write!(w, "{} = [", name)?;
+                let mut first = true;
+                for i in 0..(names.len() - 1) {
+                    if first {
+                        first = false;
+                    } else {
+                        write!(w, ", ")?;
+                    }
+                    write!(w, "{}", names[i])?;
+                }
+                write!(w, "|{}]", names[names.len() - 1])?;
             },
         }
         write!(w, ",\n\t")?;
