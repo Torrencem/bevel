@@ -9,4 +9,9 @@ pest = "2.1.2"
 pest_derive = "2.1.0"
 clap = "2.33.0"
 rand = "0.7.2"
-annotate-snippets = "0.6.1"
+
+[dependencies.annotate-snippets]
+version = "0.6.1"
+default-features = false
+
+features = ["color"]

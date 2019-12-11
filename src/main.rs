@@ -56,17 +56,13 @@ fn main() {
     let prog = parse_program(pairs, program_input.as_ref());
     
     let errs = checks::perform_checks(&prog, input_file.to_string());
+    let num_errs = errs.len();
 
-    if errs.len() > 0 {
-        let mut first = true;
+    if num_errs > 0 {
         for err in errs {
-            if first {
-                first = false;
-            } else {
-                eprintln!();
-            }
-            eprintln!("{}", err);
+            eprintln!("{}\n", err);
         }
+        eprintln!("aborting due to the previous {} error{}", num_errs, if num_errs != 1 { "s" } else { "" });
         exit(1);
     }
     
