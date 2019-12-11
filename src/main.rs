@@ -17,8 +17,8 @@ pub struct BevelParser;
 mod ast;
 use ast::parse_program;
 
+mod span;
 mod error;
-
 mod checks;
 
 use std::fs;
@@ -26,6 +26,8 @@ use std::process::exit;
 
 mod prolog_print;
 use prolog_print::PrologPrint;
+
+extern crate annotate_snippets;
 
 fn main() {
     let matches = App::new("bevel")
@@ -40,15 +42,16 @@ fn main() {
     
     let input_file = matches.value_of("INPUT").unwrap();
 
-    let program_input = fs::read_to_string(input_file).expect("Error reading input file");
+    // Replace tabs with spaces for formatting errors
+    let program_input = fs::read_to_string(input_file).expect("Error reading input file").replace("\t", "    ");
 
     let pairs = BevelParser::parse(Rule::program, &program_input).unwrap_or_else(|e| panic!("{}", e));
     
-    let prog = parse_program(pairs);
-
-    checks::perform_checks(&prog).unwrap_or_else(|e| {
+    let prog = parse_program(pairs, program_input.as_ref());
+    
+    checks::perform_checks(&prog, input_file.to_string()).unwrap_or_else(|e| {
         // TODO
-        eprintln!("ERROR: {}", e);
+        eprintln!("{}", e);
         exit(1);
     });
     

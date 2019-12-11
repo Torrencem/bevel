@@ -3,7 +3,7 @@ pub mod parse;
 
 pub use parse::parse_program;
 
-use pest::Span;
+use crate::span::Span;
 
 #[derive(Debug)]
 pub struct ProgramNode<'p> {

@@ -1,9 +1,7 @@
 
 use crate::ast::*;
 
-use crate::error::{Error, Result};
-
-use std::fmt;
+use crate::error::Result;
 
 use std::fmt::Write;
 

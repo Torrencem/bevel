@@ -3,23 +3,23 @@ use crate::Rule;
 
 use pest::iterators::{Pairs, Pair};
 
-use pest::Span;
+use crate::span::{Span, new_span};
 
 use pest::prec_climber::{PrecClimber, Operator, Assoc};
 
 use crate::ast::*;
 
 pub trait ParseNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self;
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self;
     fn as_span(&self) -> &Span<'p>;
 }
 
-pub fn parse_program<'p>(pairs: Pairs<'p, Rule>) -> ProgramNode<'p> {
+pub fn parse_program<'p>(pairs: Pairs<'p, Rule>, source: &'p str) -> ProgramNode<'p> {
     let relations: Vec<RelationNode<'p>> = 
         pairs.filter_map(|pair| {
             match pair.as_rule() {
                 Rule::EOI => None,
-                _ => Some(RelationNode::parse(pair))
+                _ => Some(RelationNode::parse(pair, source))
             }
         }).collect();
     ProgramNode {
@@ -28,21 +28,21 @@ pub fn parse_program<'p>(pairs: Pairs<'p, Rule>) -> ProgramNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for RelationNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::relation_block => {
                 let mut inners = pair.into_inner();
                 let relation_decl = inners.next().unwrap();
                 let mut relation_decl_breakdown = relation_decl.into_inner();
                 let relation: RelationId<'p> =
-                    RelationId::parse(relation_decl_breakdown.next().unwrap());
+                    RelationId::parse(relation_decl_breakdown.next().unwrap(), source);
                 let params: ConstList<'p> =
-                    ConstList::parse(relation_decl_breakdown.next().unwrap());
+                    ConstList::parse(relation_decl_breakdown.next().unwrap(), source);
                 
                 let block_or_const = inners.next().unwrap();
                 let block: RelationBlock<'p> =
-                    RelationBlock::parse(block_or_const);
+                    RelationBlock::parse(block_or_const, source);
 
                 RelationNode {
                     span: span,
@@ -56,13 +56,13 @@ impl<'p> ParseNode<'p> for RelationNode<'p> {
                 let relation_decl = inners.next().unwrap();
                 let mut relation_decl_breakdown = relation_decl.into_inner();
                 let relation: RelationId<'p> =
-                    RelationId::parse(relation_decl_breakdown.next().unwrap());
+                    RelationId::parse(relation_decl_breakdown.next().unwrap(), source);
                 let params: ConstList<'p> =
-                    ConstList::parse(relation_decl_breakdown.next().unwrap());
+                    ConstList::parse(relation_decl_breakdown.next().unwrap(), source);
                 
                 let block_or_const = inners.next().unwrap();
                 let block: RelationBlock<'p> =
-                    RelationBlock::parse(block_or_const);
+                    RelationBlock::parse(block_or_const, source);
 
                 RelationNode {
                     span: span,
@@ -82,17 +82,17 @@ impl<'p> ParseNode<'p> for RelationNode<'p> {
 
 
 impl<'p> ParseNode<'p> for RelationBlock<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
         match pair.as_rule() {
             Rule::block => {
                 let block: BlockNode<'p> =
-                    BlockNode::parse(pair);
+                    BlockNode::parse(pair, source);
                 
                 RelationBlock::Block(block)
             },
             Rule::pattern | Rule::pattern_list => {
                 let const_node: ConstList<'p> =
-                    ConstList::parse(pair);
+                    ConstList::parse(pair, source);
 
                 RelationBlock::Const(const_node)
             },
@@ -109,8 +109,8 @@ impl<'p> ParseNode<'p> for RelationBlock<'p> {
 }
 
 impl<'p> ParseNode<'p> for RelationId<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::ident => {
                 let name: String =
@@ -131,15 +131,15 @@ impl<'p> ParseNode<'p> for RelationId<'p> {
 }
 
 impl<'p> ParseNode<'p> for ConstList<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::pattern_list => {
                 let inner_const_terms = pair.into_inner();
 
                 let constants: Vec<ConstantNode<'p>> =
                     inner_const_terms
-                    .map(|pair| ConstantNode::parse(pair))
+                    .map(|pair| ConstantNode::parse(pair, source))
                     .collect();
 
                 ConstList {
@@ -150,7 +150,7 @@ impl<'p> ParseNode<'p> for ConstList<'p> {
             Rule::pattern => {
                 let mut inner_const_term = pair.into_inner();
                 let constant: ConstantNode<'p> =
-                    ConstantNode::parse(inner_const_term.next().unwrap());
+                    ConstantNode::parse(inner_const_term.next().unwrap(), source);
                 
                 ConstList {
                     span: span,
@@ -167,15 +167,15 @@ impl<'p> ParseNode<'p> for ConstList<'p> {
 }
 
 impl<'p> ParseNode<'p> for BlockNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::block => {
                 let inner_statements = pair.into_inner();
 
                 let statements: Vec<StatementNode<'p>> =
                     inner_statements
-                    .map(|pair| StatementNode::parse(pair))
+                    .map(|pair| StatementNode::parse(pair, source))
                     .collect();
 
                 BlockNode {
@@ -193,8 +193,8 @@ impl<'p> ParseNode<'p> for BlockNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for ConstantNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         
         let pair = 
             if Rule::pattern != pair.as_rule() {
@@ -224,14 +224,14 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                     Rule::list_pattern => {
                         let innerds = pair.into_inner();
                         let contents: Vec<ConstantNode<'p>> =
-                            innerds.map(|pair| ConstantNode::parse(pair))
+                            innerds.map(|pair| ConstantNode::parse(pair, source))
                             .collect();
                         ConstantContents::List(contents)
                     },
                     Rule::conslist_pattern => {
                         let innerds = pair.into_inner();
                         let contents: Vec<ConstantNode<'p>> =
-                            innerds.map(|pair| ConstantNode::parse(pair))
+                            innerds.map(|pair| ConstantNode::parse(pair, source))
                             .collect();
                         ConstantContents::ConsList(contents)
                     },
@@ -247,22 +247,22 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for StatementNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
         match pair.as_rule() {
             Rule::assignment | Rule::mul_assignment => {
-                StatementNode::Assignment(AssignmentNode::parse(pair))
+                StatementNode::Assignment(AssignmentNode::parse(pair, source))
             },
             Rule::relate | Rule::mul_relate => {
-                StatementNode::Relate(RelateNode::parse(pair))
+                StatementNode::Relate(RelateNode::parse(pair, source))
             },
             Rule::binary_comparison => {
-                StatementNode::BinaryFact(BinaryFactNode::parse(pair))
+                StatementNode::BinaryFact(BinaryFactNode::parse(pair, source))
             },
             Rule::relation_call => {
-                StatementNode::Relation(RelationCallNode::parse(pair))
+                StatementNode::Relation(RelationCallNode::parse(pair, source))
             },
             Rule::refute => {
-                StatementNode::Refute(RefuteNode::parse(pair))
+                StatementNode::Refute(RefuteNode::parse(pair, source))
             },
             x => panic!("unexpected: {:?}", x)
         }
@@ -280,20 +280,20 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for RelationCallNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::relation_call => {
                 let mut innerds = pair.into_inner();
                 let ident_pair = innerds.next().unwrap();
-                let ident = RelationId::parse(ident_pair);
+                let ident = RelationId::parse(ident_pair, source);
                 
                 let expr_list = innerds.next().unwrap();
                 assert!(expr_list.as_rule() == Rule::expr_list);
                 let innerds = expr_list.into_inner();
 
                 let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
-                    ExpressionNode::parse(pair)
+                    ExpressionNode::parse(pair, source)
                 }).collect();
                 
                 RelationCallNode {
@@ -312,15 +312,15 @@ impl<'p> ParseNode<'p> for RelationCallNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for AssignmentNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::assignment => {
                 let mut innerds = pair.into_inner();
                 let constant_term = innerds.next().unwrap();
-                let lhs: ConstantNode<'p> = ConstantNode::parse(constant_term);
+                let lhs: ConstantNode<'p> = ConstantNode::parse(constant_term, source);
                 let expr_term = innerds.next().unwrap();
-                let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term);
+                let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term, source);
                 AssignmentNode {
                     span: span,
                     lhs: ConstList {
@@ -336,9 +336,9 @@ impl<'p> ParseNode<'p> for AssignmentNode<'p> {
             Rule::mul_assignment => {
                 let mut innerds = pair.into_inner();
                 let constant_term = innerds.next().unwrap();
-                let lhs: ConstList<'p> = ConstList::parse(constant_term);
+                let lhs: ConstList<'p> = ConstList::parse(constant_term, source);
                 let expr_term = innerds.next().unwrap();
-                let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term);
+                let rhs: ExpressionNode<'p> = ExpressionNode::parse(expr_term, source);
                 AssignmentNode {
                     span: span,
                     lhs: lhs,
@@ -355,13 +355,13 @@ impl<'p> ParseNode<'p> for AssignmentNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for RefuteNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::refute => {
                 let statement_term = pair.into_inner().next().unwrap();
                 let result: StatementNode<'p> =
-                    StatementNode::parse(statement_term);
+                    StatementNode::parse(statement_term, source);
                 RefuteNode {
                     span: span,
                     statement: Box::new(result)
@@ -377,13 +377,13 @@ impl<'p> ParseNode<'p> for RefuteNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for RelateNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::relate => {
                 let expr_term = pair.into_inner().next().unwrap();
                 let result: ExpressionNode<'p> = 
-                    ExpressionNode::parse(expr_term);
+                    ExpressionNode::parse(expr_term, source);
                 RelateNode {
                     span: span,
                     result: vec![result]
@@ -394,7 +394,7 @@ impl<'p> ParseNode<'p> for RelateNode<'p> {
                 let exprs = expr_term.into_inner();
                 let results: Vec<ExpressionNode<'p>> =
                     exprs
-                    .map(|pair| { ExpressionNode::parse(pair) })
+                    .map(|pair| { ExpressionNode::parse(pair, source) })
                     .collect();
 
                 RelateNode {
@@ -412,14 +412,14 @@ impl<'p> ParseNode<'p> for RelateNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
-        let span: Span<'p> = pair.as_span();
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::binary_comparison => {
                 let mut innerds = pair.into_inner();
                 let left_expr = innerds.next().unwrap();
                 let lhs: ExpressionNode<'p> =
-                    ExpressionNode::parse(left_expr);
+                    ExpressionNode::parse(left_expr, source);
                 let operator = innerds.next().unwrap();
                 let op: BinaryFactOperation = match operator.as_rule() {
                     Rule::gt => BinaryFactOperation::Gt,
@@ -432,7 +432,7 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
                 };
                 let right_expr = innerds.next().unwrap();
                 let rhs: ExpressionNode<'p> =
-                    ExpressionNode::parse(right_expr);
+                    ExpressionNode::parse(right_expr, source);
                 BinaryFactNode {
                     span: span,
                     lhs: lhs,
@@ -450,7 +450,7 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
 }
 
 impl<'p> ParseNode<'p> for ExpressionNode<'p> {
-    fn parse(pair: Pair<'p, Rule>) -> Self {
+    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
         let pairs = pair.into_inner();
 
         let climber = PrecClimber::new(vec![
@@ -461,22 +461,22 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
 
         let primary = |pair: Pair<'p, Rule>| {
             ExpressionNode {
-                span: pair.as_span(),
+                span: new_span(pair.as_span(), source),
                 contents: {
                     match pair.as_rule() {
                         Rule::num_literal | Rule::atom | Rule::ident =>
-                            ExpressionContents::Const(ConstantNode::parse(pair)),
+                            ExpressionContents::Const(ConstantNode::parse(pair, source)),
                         Rule::relation_call => {
                             let mut innerds = pair.into_inner();
                             let ident_pair = innerds.next().unwrap();
-                            let ident = RelationId::parse(ident_pair);
+                            let ident = RelationId::parse(ident_pair, source);
                             
                             let expr_list = innerds.next().unwrap();
                             assert!(expr_list.as_rule() == Rule::expr_list);
                             let innerds = expr_list.into_inner();
 
                             let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
-                                ExpressionNode::parse(pair)
+                                ExpressionNode::parse(pair, source)
                             }).collect();
                             
                             ExpressionContents::Call {
@@ -487,7 +487,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                         Rule::list_expr => {
                             let innerds = pair.into_inner();
                             let vals: Vec<ExpressionNode<'p>> =
-                                innerds.map(|pair| ExpressionNode::parse(pair))
+                                innerds.map(|pair| ExpressionNode::parse(pair, source))
                                 .collect();
                             ExpressionContents::List {
                                 vals: vals
@@ -496,7 +496,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                         Rule::conslist_expr => {
                             let innerds = pair.into_inner();
                             let vals: Vec<ExpressionNode<'p>> =
-                                innerds.map(|pair| ExpressionNode::parse(pair))
+                                innerds.map(|pair| ExpressionNode::parse(pair, source))
                                 .collect();
                             ExpressionContents::ConsList {
                                 vals: vals
@@ -507,7 +507,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                             let mut innerds = pair.into_inner();
                             let inner = innerds.next().unwrap();
 
-                            ExpressionNode::parse(inner).contents
+                            ExpressionNode::parse(inner, source).contents
                         }
                     }
                 },
@@ -516,7 +516,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
 
         let infix = |lhs: ExpressionNode<'p>, op: Pair<'p, Rule>, rhs: ExpressionNode<'p>| {
             ExpressionNode {
-                span: op.as_span(),
+                span: new_span(op.as_span(), source),
                 contents: ExpressionContents::Operation {
                     op: match op.as_rule() {
                             Rule::add => BinaryOperation::Add,

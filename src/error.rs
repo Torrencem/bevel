@@ -1,16 +1,20 @@
 
+use annotate_snippets::snippet::Snippet;
+use annotate_snippets::display_list::DisplayList;
+use annotate_snippets::formatter::DisplayListFormatter;
+
 use std::result;
 use std::error;
 use std::fmt;
 use pest;
-use pest::Span;
 
+use crate::span::Span;
 use crate::Rule;
 
 #[derive(Debug)]
 pub enum Error {
     Parsing(pest::error::Error<Rule>),
-    Code(String, pest::error::Error<()>),
+    Code(Snippet),
     Formatting(fmt::Error),
 }
 
@@ -20,7 +24,19 @@ impl error::Error for Error {
     fn description(&self) -> &str {
         match self {
             Error::Parsing(e) => <pest::error::Error<Rule> as error::Error>::description(&e),
-            Error::Code(_, e) => <pest::error::Error<()> as error::Error>::description(&e),
+            Error::Code(s) => {
+                match &s.title {
+                    None => "code error",
+                    Some(title) => {
+                        match &title.label {
+                            None => "code error",
+                            Some(s) => {
+                                s.as_ref()
+                            }
+                        }
+                    }
+                }
+            },
             Error::Formatting(..) => "error writing to buffer",
         }
     }
@@ -30,7 +46,13 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut res_str = match self {
             Error::Parsing(e) => format!("parsing error:\n{}", e),
-            Error::Code(name, e) => format!("{}\n{}", name, e),
+            Error::Code(s) => {
+                let dlf = DisplayListFormatter::new(true, false);
+                
+                let dl: DisplayList = s.clone().into();
+
+                dlf.format(&dl)
+            },
             Error::Formatting(e) => format!("{}", e),
         };
         // Weird bug with pest
@@ -51,13 +73,14 @@ impl From<fmt::Error> for Error {
     }
 }
 
-pub fn error_from_message_span(err_type: String, message: String, span: Span) -> Error {
-    Error::Code(
-        err_type,
-        pest::error::Error::<()>::new_from_span(
-            pest::error::ErrorVariant::CustomError {
-                message: message
-            }, span
-        )
-    )
+pub fn union_spans<'p>(span1: &Span<'p>, span2: &Span<'p>) -> Span<'p> {
+    Span {
+        input: span1.input,
+        start: span1.start,
+        end: span2.end,
+    }
 }
+
+// pub fn to_line_start(span: &Span) -> Span {
+//
+// }
