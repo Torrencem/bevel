@@ -1,0 +1,5 @@
+
+what_to_return() {
+	relate (1, 2)
+	relate 5
+};

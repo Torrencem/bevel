@@ -17,7 +17,12 @@ pub struct BevelParser;
 mod ast;
 use ast::parse_program;
 
+mod error;
+
+mod checks;
+
 use std::fs;
+use std::process::exit;
 
 mod prolog_print;
 use prolog_print::PrologPrint;
@@ -40,6 +45,12 @@ fn main() {
     let pairs = BevelParser::parse(Rule::program, &program_input).unwrap_or_else(|e| panic!("{}", e));
     
     let prog = parse_program(pairs);
+
+    checks::perform_checks(&prog).unwrap_or_else(|e| {
+        // TODO
+        eprintln!("ERROR: {}", e);
+        exit(1);
+    });
     
     let mut s = String::new();
 
