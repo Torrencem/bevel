@@ -261,6 +261,9 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             Rule::relation_call => {
                 StatementNode::Relation(RelationCallNode::parse(pair))
             },
+            Rule::refute => {
+                StatementNode::Refute(RefuteNode::parse(pair))
+            },
             x => panic!("unexpected: {:?}", x)
         }
     }
@@ -269,6 +272,7 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
         match self {
             StatementNode::Assignment(anode) => &anode.span,
             StatementNode::Relate(rnode) => &rnode.span,
+            StatementNode::Refute(rnode) => &rnode.span,
             StatementNode::BinaryFact(bfnode) => &bfnode.span,
             StatementNode::Relation(rcallnode) => &rcallnode.span,
         }
@@ -339,6 +343,28 @@ impl<'p> ParseNode<'p> for AssignmentNode<'p> {
                     span: span,
                     lhs: lhs,
                     rhs: rhs,
+                }
+            },
+            x => panic!("unexpected: {:?}", x)
+        }
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
+}
+
+impl<'p> ParseNode<'p> for RefuteNode<'p> {
+    fn parse(pair: Pair<'p, Rule>) -> Self {
+        let span: Span<'p> = pair.as_span();
+        match pair.as_rule() {
+            Rule::refute => {
+                let statement_term = pair.into_inner().next().unwrap();
+                let result: StatementNode<'p> =
+                    StatementNode::parse(statement_term);
+                RefuteNode {
+                    span: span,
+                    statement: Box::new(result)
                 }
             },
             x => panic!("unexpected: {:?}", x)
@@ -428,6 +454,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
         let pairs = pair.into_inner();
 
         let climber = PrecClimber::new(vec![
+            Operator::new(Rule::modulo, Assoc::Left),
             Operator::new(Rule::add, Assoc::Left) | Operator::new(Rule::subtract, Assoc::Left),
             Operator::new(Rule::multiply, Assoc::Left) | Operator::new(Rule::divide, Assoc::Left),
         ]);

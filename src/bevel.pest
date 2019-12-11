@@ -48,12 +48,13 @@ simple_relation = { relation_decl ~ "~" ~ pattern }
 
 multiple_relation = { relation_decl ~ "~" ~ "(" ~ pattern_list ~ ")" }
 
-statement = _{ assignment | mul_assignment | relate | mul_relate | binary_comparison | relation_call }
+statement = _{ assignment | mul_assignment | relate | mul_relate | binary_comparison | relation_call | refute }
 assignment = { pattern ~ "~" ~ expr }
 mul_assignment = { "(" ~ pattern_list ~ ")" ~ "~" ~ expr }
 relate = { "relate" ~ expr }
 mul_relate = { "relate" ~ mul_expr }
 mul_expr = { (( "(" ~ expr ~ ("," ~ expr)*) ~ ")" ) | ( expr ~ ("," ~ expr)* ) }
+refute = { "refute" ~ statement }
 
 relation_block = { 
 	relation_decl ~ nl? ~ block

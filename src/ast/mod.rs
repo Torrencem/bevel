@@ -71,6 +71,7 @@ pub enum ConstantContents<'p> {
 pub enum StatementNode<'p> {
     Assignment(AssignmentNode<'p>),
     Relate(RelateNode<'p>),
+    Refute(RefuteNode<'p>),
     BinaryFact(BinaryFactNode<'p>),
     Relation(RelationCallNode<'p>),
 }
@@ -86,6 +87,12 @@ pub struct AssignmentNode<'p> {
 pub struct RelateNode<'p> {
     pub span: Span<'p>,
     pub result: Vec<ExpressionNode<'p>>,
+}
+
+#[derive(Debug)]
+pub struct RefuteNode<'p> {
+    pub span: Span<'p>,
+    pub statement: Box<StatementNode<'p>>,
 }
 
 #[derive(Debug)]

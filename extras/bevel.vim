@@ -17,7 +17,7 @@ syn match bvAtom "'\w\(\w\)*"
 syn match bvProc "\w\(\w\)*("he=e-1,me=e-1
 syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\|:\|%\)=\?"
 
-syn keyword bvKeyword relate
+syn keyword bvKeyword relate refute
 
 let b:current_syntax = "bv"
 

@@ -34,3 +34,15 @@ leaf(x) {
 	atom(x)
 	x != []
 };
+
+flatten([]) ~ [];
+flatten((h:tail)) {
+	leaf(h)
+	relate (h : flatten(tail))
+};
+flatten((h:tail)) {
+	refute leaf(h)
+	left ~ flatten(h)
+	right ~ flatten(tail)
+	relate append(left, right)
+};

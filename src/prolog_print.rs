@@ -151,6 +151,7 @@ impl<'p> PrologPrint for StatementNode<'p> {
         match self {
             StatementNode::Assignment(anode) => anode.prolog_print(w),
             StatementNode::Relate(rnode) => rnode.prolog_print(w),
+            StatementNode::Refute(rnode) => rnode.prolog_print(w),
             StatementNode::BinaryFact(bfnode) => bfnode.prolog_print(w),
             StatementNode::Relation(rnode) => rnode.prolog_print(w),
         }
@@ -216,6 +217,12 @@ impl<'p> PrologPrint for AssignmentNode<'p> {
     }
 }
 
+impl<'p> PrologPrint for RefuteNode<'p> {
+    fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
+        write!(w, "\\+ ")?;
+        self.statement.prolog_print(w)
+    }
+}
 impl<'p> PrologPrint for RelateNode<'p> {
     fn prolog_print<W: Write>(&self, w: &mut W) -> fmt::Result {
         let mut res: Vec<String> = Vec::with_capacity(self.result.len());
