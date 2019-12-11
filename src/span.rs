@@ -42,6 +42,23 @@ impl<'p> Span<'p> {
         }
     }
     
+    pub fn to_line_end(&self) -> Span<'p> {
+        let mut curr = self.start;
+        let mut iter = self.input[..=self.start].chars();
+        while let Some(c) = iter.next() {
+            if c == '\n' {
+                break;
+            }
+            curr -= 1;
+        }
+        
+        Span {
+            input: self.input,
+            start: curr + 1,
+            end: self.end,
+        }
+    }
+    
     // Assuming we're the span of an error message,
     // convert an index into an index for annotations
     pub fn distance_from_start(&self, pos: usize) -> usize {

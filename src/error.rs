@@ -80,7 +80,3 @@ pub fn union_spans<'p>(span1: &Span<'p>, span2: &Span<'p>) -> Span<'p> {
         end: span2.end,
     }
 }
-
-// pub fn to_line_start(span: &Span) -> Span {
-//
-// }

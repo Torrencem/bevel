@@ -19,6 +19,7 @@ use ast::parse_program;
 
 mod span;
 mod error;
+use error::Error;
 mod checks;
 
 use std::fs;
@@ -28,6 +29,11 @@ mod prolog_print;
 use prolog_print::PrologPrint;
 
 extern crate annotate_snippets;
+
+fn quit(e: Error) -> ! {
+    eprintln!("{}", e);
+    exit(1)
+}
 
 fn main() {
     let matches = App::new("bevel")
@@ -43,21 +49,30 @@ fn main() {
     let input_file = matches.value_of("INPUT").unwrap();
 
     // Replace tabs with spaces for formatting errors
-    let program_input = fs::read_to_string(input_file).expect("Error reading input file").replace("\t", "    ");
+    let program_input = fs::read_to_string(input_file).expect("error reading input file").replace("\t", "    ");
 
-    let pairs = BevelParser::parse(Rule::program, &program_input).unwrap_or_else(|e| panic!("{}", e));
+    let pairs = BevelParser::parse(Rule::program, &program_input).unwrap_or_else(|e| quit(e.into()));
     
     let prog = parse_program(pairs, program_input.as_ref());
     
-    checks::perform_checks(&prog, input_file.to_string()).unwrap_or_else(|e| {
-        // TODO
-        eprintln!("{}", e);
+    let errs = checks::perform_checks(&prog, input_file.to_string());
+
+    if errs.len() > 0 {
+        let mut first = true;
+        for err in errs {
+            if first {
+                first = false;
+            } else {
+                eprintln!();
+            }
+            eprintln!("{}", err);
+        }
         exit(1);
-    });
+    }
     
     let mut s = String::new();
 
-    prog.prolog_print(&mut s).expect("IO error when writing to buffer");
+    prog.prolog_print(&mut s).unwrap_or_else(|e| quit(e));
 
     println!("{}", s);
 }

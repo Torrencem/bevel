@@ -5,6 +5,153 @@ pub use parse::parse_program;
 
 use crate::span::Span;
 
+pub trait ASTVisitor<State, Return> {
+    fn visit_program(program: &ProgramNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        for relation in program.relations.iter() {
+            res.append(&mut Self::visit_relation(&relation, state));
+        }
+        res
+    }
+
+    fn visit_relation(relation: &RelationNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        match &relation.block {
+            RelationBlock::Const(clist) => {
+                res.append(&mut Self::visit_constlist(&clist, state));
+            },
+            RelationBlock::Block(bnode) => {
+                res.append(&mut Self::visit_block(&bnode, state));
+            },
+        };
+        res
+    }
+
+    fn visit_relationid(_rid: &RelationId, _state: &State) -> Vec<Return> {
+        vec![]
+    }
+    
+    fn visit_constlist(clist: &ConstList, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        for constant in clist.constants.iter() {
+            res.append(&mut Self::visit_constant(&constant, state));
+        }
+        res
+    }
+
+    fn visit_block(bnode: &BlockNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        for statement in bnode.statements.iter() {
+            res.append(&mut Self::visit_statement(&statement, state));
+        }
+        res
+    }
+
+    fn visit_constant(constant: &ConstantNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        if let ConstantContents::List(listpat) = &constant.contents {
+            for constant in listpat {
+                res.append(&mut Self::visit_constant(&constant, state));
+            }
+        }
+        if let ConstantContents::ConsList(listpat) = &constant.contents {
+            for constant in listpat {
+                res.append(&mut Self::visit_constant(&constant, state));
+            }
+        }
+        res
+    }
+
+    fn visit_statement(statement: &StatementNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        match statement {
+            StatementNode::Assignment(anode) => {
+                res.append(&mut Self::visit_assignment(&anode, state));
+            },
+            StatementNode::Relate(rnode) => {
+                res.append(&mut Self::visit_relate(&rnode, state));
+            },
+            StatementNode::Refute(rnode) => {
+                res.append(&mut Self::visit_refute(&rnode, state));
+            },
+            StatementNode::BinaryFact(bfact) => {
+                res.append(&mut Self::visit_bfact(&bfact, state));
+            },
+            StatementNode::Relation(rcallnode) => {
+                res.append(&mut Self::visit_relcall(&rcallnode, state));
+            }
+        }
+        res
+    }
+
+    fn visit_assignment(assignment: &AssignmentNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        res.append(&mut Self::visit_constlist(&assignment.lhs, state));
+        res.append(&mut Self::visit_expr(&assignment.rhs, state));
+        res
+    }
+
+    fn visit_relate(relate: &RelateNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        for result in relate.result.iter() {
+            res.append(&mut Self::visit_expr(&result, state));
+        }
+        res
+    }
+
+    fn visit_refute(refute: &RefuteNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        res.append(&mut Self::visit_statement(&refute.statement, state));
+        res
+    }
+
+    fn visit_bfact(bfact: &BinaryFactNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        res.append(&mut Self::visit_expr(&bfact.lhs, state));
+        res.append(&mut Self::visit_expr(&bfact.rhs, state));
+        res
+    }
+
+    fn visit_expr(expression: &ExpressionNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        match &expression.contents {
+            ExpressionContents::Const(cnode) => {
+                res.append(&mut Self::visit_constant(&cnode, state));
+            },
+            ExpressionContents::Operation { op: _op, lhs, rhs } => {
+                res.append(&mut Self::visit_expr(&lhs, state));
+                res.append(&mut Self::visit_expr(&rhs, state));
+            },
+            ExpressionContents::Call { rel, args } => {
+                res.append(&mut Self::visit_relationid(&rel, state));
+                for arg in args.iter() {
+                    res.append(&mut Self::visit_expr(&arg, state));
+                }
+            },
+            ExpressionContents::List { vals } => {
+                for val in vals.iter() {
+                    res.append(&mut Self::visit_expr(&val, state));
+                }
+            },
+            ExpressionContents::ConsList { vals } => {
+                for val in vals.iter() {
+                    res.append(&mut Self::visit_expr(&val, state));
+                }
+            }
+        }
+        res
+    }
+
+    fn visit_relcall(rcall: &RelationCallNode, state: &State) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        res.append(&mut Self::visit_relationid(&rcall.rel, state));
+        for expr in rcall.args.iter() {
+            res.append(&mut Self::visit_expr(&expr, state));
+        }
+        res
+    }
+}
+
 #[derive(Debug)]
 pub struct ProgramNode<'p> {
     pub relations: Vec<RelationNode<'p>>,
