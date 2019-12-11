@@ -15,7 +15,7 @@ syn match   bvNumber		 "\(\<\d\(\d\|_\d\)*\.\(\d\(\d\|_\d\)*\)\=\|\.\d\(\d\|_\d\
 syn match bvComment /%.*$/
 syn match bvAtom "'\w\(\w\)*"
 syn match bvProc "\w\(\w\)*("he=e-1,me=e-1
-syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\)=\?"
+syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\|:\)=\?"
 
 syn keyword bvKeyword relate
 
