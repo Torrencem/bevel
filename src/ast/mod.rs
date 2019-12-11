@@ -49,7 +49,7 @@ pub fn find_num_results<'p>(bnode: &BlockNode<'p>) -> usize {
             return rnode.result.len();
         }
     }
-    panic!("block without relate statement! {}", bnode.span.as_str());
+    return 0;
 }
 
 #[derive(Debug)]

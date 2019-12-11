@@ -42,18 +42,18 @@ impl<'p> PrologPrint for RelationNode<'p> {
                 write!(w, ")")?;
             },
             RelationBlock::Block(block) => {
-                if pcomma {
+                let num_results = find_num_results(block);
+                if pcomma && (num_results > 0) {
                     write!(w, ", ")?;
                 }
-                let num_results = find_num_results(block);
                 for i in 0..num_results {
                     if i == num_results - 1 {
-                        write!(w, "Result{})", i)?;
+                        write!(w, "Result{}", i)?;
                     } else {
                         write!(w, "Result{}, ", i)?;
                     }
                 }
-                write!(w, " :- ")?;
+                write!(w, ") :- ")?;
                 block.prolog_print(w)?;
             }
         }

@@ -29,8 +29,7 @@ mergeSort(l) {
 	relate merge(mergeSort(a), mergeSort(b))
 };
 
-leaf() {
-	relate x
+leaf(x) {
 	atom(x)
 	x != []
 };
