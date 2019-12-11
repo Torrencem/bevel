@@ -186,6 +186,9 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                 let ident: String =
                     span.as_str().to_string();
                 match pair.as_rule() {
+                    Rule::empty_pat => {
+                        ConstantContents::EmptyPattern
+                    },
                     Rule::atom => {
                         ConstantContents::Atom(ident)
                     },

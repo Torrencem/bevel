@@ -60,6 +60,7 @@ pub struct ConstantNode<'p> {
 
 #[derive(Debug)]
 pub enum ConstantContents<'p> {
+    EmptyPattern,
     Atom(String),
     Var(String),
     Literal(String),

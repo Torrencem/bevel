@@ -6,7 +6,9 @@ alpha = { 'a'..'z' | 'A'..'Z' }
 
 nl = _{ "\n"+ }
 
-ident = @{ alpha ~ (alpha | ASCII_DIGIT)* }
+ident = @{ alpha ~ (alpha | ASCII_DIGIT | "_")* }
+
+empty_pat = { "_" }
 
 atom = @{ "'" ~ ident }
 
@@ -31,7 +33,7 @@ relation_call = { ident ~ "(" ~ arg_list ~ ")" }
 
 relation_decl = { ident ~ "(" ~ param_list ~ ")" }
 	param_list = { (const_term ~ ("," ~ const_term)*)? }
-	const_term = { num_literal | ident | atom | list_literal | conslist_literal}
+	const_term = { empty_pat | num_literal | ident | atom | list_literal | conslist_literal}
 	list_literal = { "[" ~ (const_term ~ ("," ~ const_term)*)? ~ "]" }
 	conslist_literal = { "(" ~ const_term ~ (":" ~ const_term)+ ~ ")" }
 

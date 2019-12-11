@@ -60,7 +60,7 @@ split(x) {
 
 just([x]) ~ x;
 
-head([h, t]) ~ h;
+head([h, _]) ~ h;
 
 flip([a, b]) ~ [b, a];
 
