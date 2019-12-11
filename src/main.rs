@@ -15,13 +15,11 @@ use pest::Parser;
 pub struct BevelParser;
 
 mod ast;
-
 use ast::parse_program;
 
 use std::fs;
 
 mod prolog_print;
-
 use prolog_print::PrologPrint;
 
 fn main() {

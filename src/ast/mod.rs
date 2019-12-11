@@ -45,7 +45,6 @@ pub struct BlockNode<'p> {
 pub fn find_num_results<'p>(bnode: &BlockNode<'p>) -> usize {
     for statement in bnode.statements.iter() {
         if let StatementNode::Relate(rnode) = statement {
-            // TODO: Maybe check consistency
             return rnode.result.len();
         }
     }
@@ -135,6 +134,7 @@ pub enum ExpressionContents<'p> {
 
 #[derive(Debug)]
 pub struct RelationCallNode<'p> {
+    pub span: Span<'p>,
     pub rel: RelationId<'p>,
     pub args: Vec<ExpressionNode<'p>>,
 }
@@ -144,5 +144,6 @@ pub enum BinaryOperation {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
+    Mod,
 }

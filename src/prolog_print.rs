@@ -270,6 +270,7 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
                     BinaryOperation::Sub => "-",
                     BinaryOperation::Mul => "*",
                     BinaryOperation::Div => "/",
+                    BinaryOperation::Mod => " mod ",
                 };
                 let left = lhs.prolog_print_val(w)?;
                 let right = rhs.prolog_print_val(w)?;

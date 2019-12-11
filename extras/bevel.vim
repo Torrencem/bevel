@@ -12,10 +12,10 @@ syn match   bvNumber		 "\<\(0[bB][0-1]\+\|0[0-7]*\|0[xX]\x\+\|\d\(\d\|_\d\)*\)[l
 syn match   bvNumber		 "\<\d\(\d\|_\d\)*\([eE][-+]\=\d\(\d\|_\d\)*\)\=[fFdD]\>"
 syn match   bvNumber		 "\<\d\(\d\|_\d\)*[eE][-+]\=\d\(\d\|_\d\)*[fFdD]\=\>"
 syn match   bvNumber		 "\(\<\d\(\d\|_\d\)*\.\(\d\(\d\|_\d\)*\)\=\|\.\d\(\d\|_\d\)*\)\([eE][-+]\=\d\(\d\|_\d\)*\)\=[fFdD]\="
-syn match bvComment /%.*$/
+syn match bvComment /#.*$/
 syn match bvAtom "'\w\(\w\)*"
 syn match bvProc "\w\(\w\)*("he=e-1,me=e-1
-syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\|:\)=\?"
+syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\|:\|%\)=\?"
 
 syn keyword bvKeyword relate
 
@@ -28,5 +28,5 @@ hi def link bvProc Function
 hi def link bvComment Comment
 hi def link bvOperator Operator
 
-set comments="\%"
-set commentstring="\% %s"
+setglobal comments="#"
+setglobal commentstring="# %s"

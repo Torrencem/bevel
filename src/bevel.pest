@@ -1,25 +1,24 @@
 WHITESPACE = _{ " " | "\t" }
 
-COMMENT = _{ "%" ~ (!nl ~ ANY)* ~ nl }
+COMMENT = _{ "#" ~ (!nl ~ ANY)* ~ nl }
 
-alpha = { 'a'..'z' | 'A'..'Z' }
+nl = _{ NEWLINE+ }
 
-nl = _{ "\n"+ }
-
-ident = @{ alpha ~ (alpha | ASCII_DIGIT | "_")* }
+ident = @{ LETTER ~ (LETTER | ASCII_DIGIT | "_")* }
 
 empty_pat = { "_" }
 
 atom = @{ "'" ~ ident }
 
-num_literal = @{ int ~ ("." ~ ASCII_DIGIT*)? ~ (^"e" ~ int)? }
-	int = { ("+" | "-")? ~ ASCII_DIGIT+ }
+num_literal = @{ int ~ ("." ~ (ASCII_DIGIT | "_")*)? ~ (^"e" ~ int)? }
+	int = { ("+" | "-")? ~ (ASCII_DIGIT | "_")+ }
 
-num_operation = _{ add | subtract | multiply | divide }
+num_operation = _{ add | subtract | multiply | divide | modulo }
 	add = { "+" }
 	subtract = { "-" }
 	multiply = { "*" }
 	divide = { "/" }
+	modulo = { "%" }
 
 num_compare = _{ leq | geq | eq | neq | gt | lt }
 	gt = { ">" }
@@ -29,32 +28,32 @@ num_compare = _{ leq | geq | eq | neq | gt | lt }
 	eq = { "==" }
 	neq = { "!=" }
 
-relation_call = { ident ~ "(" ~ arg_list ~ ")" }
 
-relation_decl = { ident ~ "(" ~ param_list ~ ")" }
-	param_list = { (const_term ~ ("," ~ const_term)*)? }
-	const_term = { empty_pat | num_literal | ident | atom | list_literal | conslist_literal}
-	list_literal = { "[" ~ (const_term ~ ("," ~ const_term)*)? ~ "]" }
-	conslist_literal = { "(" ~ const_term ~ (":" ~ const_term)+ ~ ")" }
+relation_decl = { ident ~ "(" ~ pattern_list ~ ")" }
+pattern_list = { (pattern ~ ("," ~ pattern)*)? }
+pattern = { empty_pat | num_literal | ident | atom | list_pattern | conslist_pattern}
+list_pattern = { "[" ~ (pattern ~ ("," ~ pattern)*)? ~ "]" }
+conslist_pattern = { "(" ~ pattern ~ (":" ~ pattern)+ ~ ")" }
 
-arg_list = { (expr ~ ("," ~ expr)*)? }
-
-expr_conslist = { "(" ~ expr ~ (":" ~ expr)+ ~ ")" }
-expr_list = { "[" ~ (expr ~ ("," ~ expr)*)? ~ "]" }
-expr_bin = { expr ~ num_compare ~ expr }
+expr_list = { (expr ~ ("," ~ expr)*)? }
+relation_call = { ident ~ "(" ~ expr_list ~ ")" }
+conslist_expr = { "(" ~ expr ~ (":" ~ expr)+ ~ ")" }
+list_expr = { "[" ~ (expr ~ ("," ~ expr)*)? ~ "]" }
 expr = { term ~ (num_operation ~ term)* }
-term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident | expr_list | expr_conslist }
+term = _{ num_literal | atom | ("(" ~ expr ~ ")") | relation_call | ident | list_expr | conslist_expr }
 
-simple_relation = { relation_decl ~ "~" ~ const_term }
+binary_comparison = { expr ~ num_compare ~ expr }
 
-multiple_relation = { relation_decl ~ "~" ~ "(" ~ param_list ~ ")" }
+simple_relation = { relation_decl ~ "~" ~ pattern }
 
-statement = _{ assignment | mul_assignment | relate | mul_relate | expr_bin | relation_call }
-	assignment = { const_term ~ "~" ~ expr }
-	mul_assignment = { "(" ~ param_list ~ ")" ~ "~" ~ expr }
-	relate = { "relate" ~ expr }
-	mul_relate = { "relate" ~ mul_expr }
-	mul_expr = { (( "(" ~ expr ~ ("," ~ expr)*) ~ ")" ) | ( expr ~ ("," ~ expr)* ) }
+multiple_relation = { relation_decl ~ "~" ~ "(" ~ pattern_list ~ ")" }
+
+statement = _{ assignment | mul_assignment | relate | mul_relate | binary_comparison | relation_call }
+assignment = { pattern ~ "~" ~ expr }
+mul_assignment = { "(" ~ pattern_list ~ ")" ~ "~" ~ expr }
+relate = { "relate" ~ expr }
+mul_relate = { "relate" ~ mul_expr }
+mul_expr = { (( "(" ~ expr ~ ("," ~ expr)*) ~ ")" ) | ( expr ~ ("," ~ expr)* ) }
 
 relation_block = { 
 	relation_decl ~ nl? ~ block

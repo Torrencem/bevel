@@ -11,7 +11,7 @@ use crate::ast::*;
 
 pub trait ParseNode<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self;
-    // fn as_span(&self) -> &Span<Rule>;
+    fn as_span(&self) -> &Span<'p>;
 }
 
 pub fn parse_program<'p>(pairs: Pairs<'p, Rule>) -> ProgramNode<'p> {
@@ -74,6 +74,10 @@ impl<'p> ParseNode<'p> for RelationNode<'p> {
             x => panic!("unexpected: {:?}", x),
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 
@@ -86,13 +90,20 @@ impl<'p> ParseNode<'p> for RelationBlock<'p> {
                 
                 RelationBlock::Block(block)
             },
-            Rule::const_term | Rule::param_list => {
+            Rule::pattern | Rule::pattern_list => {
                 let const_node: ConstList<'p> =
                     ConstList::parse(pair);
 
                 RelationBlock::Const(const_node)
             },
             x => panic!("unexpected: {:?}", x),
+        }
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        match self {
+            RelationBlock::Const(clist) => &clist.span,
+            RelationBlock::Block(bnode) => &bnode.span,
         }
     }
 }
@@ -113,13 +124,17 @@ impl<'p> ParseNode<'p> for RelationId<'p> {
             x => panic!("unexpected: {:?}", x),
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for ConstList<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self {
         let span: Span<'p> = pair.as_span();
         match pair.as_rule() {
-            Rule::param_list => {
+            Rule::pattern_list => {
                 let inner_const_terms = pair.into_inner();
 
                 let constants: Vec<ConstantNode<'p>> =
@@ -132,7 +147,7 @@ impl<'p> ParseNode<'p> for ConstList<'p> {
                     constants: constants,
                 }
             },
-            Rule::const_term => {
+            Rule::pattern => {
                 let mut inner_const_term = pair.into_inner();
                 let constant: ConstantNode<'p> =
                     ConstantNode::parse(inner_const_term.next().unwrap());
@@ -144,6 +159,10 @@ impl<'p> ParseNode<'p> for ConstList<'p> {
             },
             x => panic!("unexpected: {:?}", x),
         }
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
     }
 }
 
@@ -167,6 +186,10 @@ impl<'p> ParseNode<'p> for BlockNode<'p> {
             x => panic!("unexpected: {:?}", x),
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for ConstantNode<'p> {
@@ -174,7 +197,7 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
         let span: Span<'p> = pair.as_span();
         
         let pair = 
-            if Rule::const_term != pair.as_rule() {
+            if Rule::pattern != pair.as_rule() {
                 pair
             } else {
                 pair.into_inner().next().unwrap()
@@ -198,14 +221,14 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                     Rule::num_literal => {
                         ConstantContents::Literal(ident)
                     },
-                    Rule::list_literal => {
+                    Rule::list_pattern => {
                         let innerds = pair.into_inner();
                         let contents: Vec<ConstantNode<'p>> =
                             innerds.map(|pair| ConstantNode::parse(pair))
                             .collect();
                         ConstantContents::List(contents)
                     },
-                    Rule::conslist_literal => {
+                    Rule::conslist_pattern => {
                         let innerds = pair.into_inner();
                         let contents: Vec<ConstantNode<'p>> =
                             innerds.map(|pair| ConstantNode::parse(pair))
@@ -216,6 +239,10 @@ impl<'p> ParseNode<'p> for ConstantNode<'p> {
                 }
             }
         }
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
     }
 }
 
@@ -228,7 +255,7 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             Rule::relate | Rule::mul_relate => {
                 StatementNode::Relate(RelateNode::parse(pair))
             },
-            Rule::expr_bin => {
+            Rule::binary_comparison => {
                 StatementNode::BinaryFact(BinaryFactNode::parse(pair))
             },
             Rule::relation_call => {
@@ -237,32 +264,47 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             x => panic!("unexpected: {:?}", x)
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        match self {
+            StatementNode::Assignment(anode) => &anode.span,
+            StatementNode::Relate(rnode) => &rnode.span,
+            StatementNode::BinaryFact(bfnode) => &bfnode.span,
+            StatementNode::Relation(rcallnode) => &rcallnode.span,
+        }
+    }
 }
 
 impl<'p> ParseNode<'p> for RelationCallNode<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self {
-                match pair.as_rule() {
-                        Rule::relation_call => {
-                            let mut innerds = pair.into_inner();
-                            let ident_pair = innerds.next().unwrap();
-                            let ident = RelationId::parse(ident_pair);
-                            
-                            let arg_list = innerds.next().unwrap();
-                            assert!(arg_list.as_rule() == Rule::arg_list);
-                            let innerds = arg_list.into_inner();
+        let span = pair.as_span();
+        match pair.as_rule() {
+            Rule::relation_call => {
+                let mut innerds = pair.into_inner();
+                let ident_pair = innerds.next().unwrap();
+                let ident = RelationId::parse(ident_pair);
+                
+                let expr_list = innerds.next().unwrap();
+                assert!(expr_list.as_rule() == Rule::expr_list);
+                let innerds = expr_list.into_inner();
 
-                            let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
-                                ExpressionNode::parse(pair)
-                            }).collect();
-                            
-                            RelationCallNode {
-                                rel: ident,
-                                args: args,
-                            }
-                        },
-                        x => panic!("unexpected: {:?}", x),
+                let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
+                    ExpressionNode::parse(pair)
+                }).collect();
+                
+                RelationCallNode {
+                    rel: ident,
+                    args: args,
+                    span: span,
                 }
+            },
+            x => panic!("unexpected: {:?}", x),
         }
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for AssignmentNode<'p> {
@@ -302,6 +344,10 @@ impl<'p> ParseNode<'p> for AssignmentNode<'p> {
             x => panic!("unexpected: {:?}", x)
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for RelateNode<'p> {
@@ -333,13 +379,17 @@ impl<'p> ParseNode<'p> for RelateNode<'p> {
             x => panic!("unexpected: {:?}", x)
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
     fn parse(pair: Pair<'p, Rule>) -> Self {
         let span: Span<'p> = pair.as_span();
         match pair.as_rule() {
-            Rule::expr_bin => {
+            Rule::binary_comparison => {
                 let mut innerds = pair.into_inner();
                 let left_expr = innerds.next().unwrap();
                 let lhs: ExpressionNode<'p> =
@@ -367,6 +417,10 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
             x => panic!("unexpected: {:?}", x)
         }
     }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
+    }
 }
 
 impl<'p> ParseNode<'p> for ExpressionNode<'p> {
@@ -390,9 +444,9 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                             let ident_pair = innerds.next().unwrap();
                             let ident = RelationId::parse(ident_pair);
                             
-                            let arg_list = innerds.next().unwrap();
-                            assert!(arg_list.as_rule() == Rule::arg_list);
-                            let innerds = arg_list.into_inner();
+                            let expr_list = innerds.next().unwrap();
+                            assert!(expr_list.as_rule() == Rule::expr_list);
+                            let innerds = expr_list.into_inner();
 
                             let args: Vec<ExpressionNode<'p>> = innerds.map(|pair| {
                                 ExpressionNode::parse(pair)
@@ -403,7 +457,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                                 args: args,
                             }
                         },
-                        Rule::expr_list => {
+                        Rule::list_expr => {
                             let innerds = pair.into_inner();
                             let vals: Vec<ExpressionNode<'p>> =
                                 innerds.map(|pair| ExpressionNode::parse(pair))
@@ -412,7 +466,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                                 vals: vals
                             }
                         },
-                        Rule::expr_conslist => {
+                        Rule::conslist_expr => {
                             let innerds = pair.into_inner();
                             let vals: Vec<ExpressionNode<'p>> =
                                 innerds.map(|pair| ExpressionNode::parse(pair))
@@ -442,6 +496,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                             Rule::subtract => BinaryOperation::Sub,
                             Rule::multiply => BinaryOperation::Mul,
                             Rule::divide => BinaryOperation::Div,
+                            Rule::modulo => BinaryOperation::Mod,
                             x => panic!("unexpected {:?}", x),
                         },
                     lhs: Box::new(lhs),
@@ -451,5 +506,9 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
         };
         
         climber.climb(pairs, primary, infix)
+    }
+
+    fn as_span(&self) -> &Span<'p> {
+        &self.span
     }
 }
