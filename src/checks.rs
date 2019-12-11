@@ -14,16 +14,17 @@ pub fn perform_checks(program: &ProgramNode, source: String) -> Vec<Error> {
 
 // Traverse looking for odd operations (adding lists, etc.)
 pub fn check_odd_ops(program: &ProgramNode, source: &String) -> Vec<Error> {
-    OddOps::visit_program(program, &source)
+    (OddOps { state: source }).visit_program(program)
 }
 
-struct OddOps {}
-impl ASTVisitor<String, Error> for OddOps {
-    fn visit_expr(expression: &ExpressionNode, state: &String) -> Vec<Error> {
+struct OddOps<'a> {state: &'a String}
+impl<'a> ASTVisitor<Error> for OddOps<'a> {
+    fn visit_expr(&mut self, expression: &ExpressionNode) -> Vec<Error> {
+        let state = self.state;
         let mut res: Vec<Error> = vec![];
         match &expression.contents {
             ExpressionContents::Const(cnode) => {
-                res.append(&mut Self::visit_constant(&cnode, state));
+                res.append(&mut self.visit_constant(&cnode));
             },
             ExpressionContents::Operation { op: _op, lhs, rhs } => {
                 let mut invalid = false;
@@ -46,23 +47,23 @@ impl ASTVisitor<String, Error> for OddOps {
                                 check_odd_ops_snippet(&span, state)
                             ));
                 }
-                res.append(&mut Self::visit_expr(&lhs, state));
-                res.append(&mut Self::visit_expr(&rhs, state));
+                res.append(&mut self.visit_expr(&lhs));
+                res.append(&mut self.visit_expr(&rhs));
             },
             ExpressionContents::Call { rel, args } => {
-                res.append(&mut Self::visit_relationid(&rel, state));
+                res.append(&mut self.visit_relationid(&rel));
                 for arg in args.iter() {
-                    res.append(&mut Self::visit_expr(&arg, state));
+                    res.append(&mut self.visit_expr(&arg));
                 }
             },
             ExpressionContents::List { vals } => {
                 for val in vals.iter() {
-                    res.append(&mut Self::visit_expr(&val, state));
+                    res.append(&mut self.visit_expr(&val));
                 }
             },
             ExpressionContents::ConsList { vals } => {
                 for val in vals.iter() {
-                    res.append(&mut Self::visit_expr(&val, state));
+                    res.append(&mut self.visit_expr(&val));
                 }
             }
         }
