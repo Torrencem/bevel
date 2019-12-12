@@ -1,4 +1,21 @@
 mod unify;
+mod solve;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Rules {
+    contents: Vec<Rule>
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Rule {
+    gives: CompoundTerm,
+    requires: Query,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Query {
+    goals: Vec<Term>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Term {
@@ -36,7 +53,3 @@ pub struct CompoundTerm {
     args: Vec<Term>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Query {
-    goals: Vec<CompoundTerm>
-}

@@ -3,11 +3,30 @@ use std::cmp::min;
 use crate::solver::*;
 use Term::*;
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-pub type Unifier = Vec<(String, Term)>;
+pub type Unifier = HashMap<String, Term>;
 
 pub type Goal = Vec<(Term, Term)>;
+
+pub fn solve_unifier(unif: &Unifier) -> Unifier {
+    let mut res = Unifier::new();
+
+    for (key, val) in unif.iter() {
+        let mut result = Unknown(key.clone());
+        let mut curr = key;
+        while let Some(val) = unif.get(curr) {
+            result = val.clone();
+            if let Unknown(x) = val {
+                curr = x;
+            } else {
+                break;
+            }
+        }
+        res.insert(key.clone(), result);
+    }
+    res
+}
 
 pub fn compute_most_gen_unifier(goal: Goal) -> Option<Unifier> {
     // https://stackoverflow.com/a/49114348
@@ -147,10 +166,10 @@ pub fn compute_most_gen_unifier(goal: Goal) -> Option<Unifier> {
         }
     }
 
-    let mut res: Vec<(String, Term)> = Vec::with_capacity(equations.len());
+    let mut res: HashMap<String, Term> = HashMap::with_capacity(equations.len());
     for (_, lhs, rhs) in equations {
         if let Unknown(s) = lhs {
-            res.push((s, rhs));
+            res.insert(s, rhs);
         }
     }
     Some(res)
@@ -207,18 +226,6 @@ mod tests {
         let term1 = Compound(CompoundTerm {
             name: "member".to_string(),
             args: vec![
-                Unknown("X".to_string()),
-                List(ListTerm {
-                    front: vec![
-                        Unknown("X".to_string())
-                    ],
-                    tail: ListTail::Unknown("Y".to_string())
-                }),
-            ]
-        });
-        let term2 = Compound(CompoundTerm {
-            name: "member".to_string(),
-            args: vec![
                 Unknown("Z".to_string()),
                 List(ListTerm {
                     front: vec![
@@ -229,8 +236,24 @@ mod tests {
                 }),
             ]
         });
+        let term2 = Compound(CompoundTerm {
+            name: "member".to_string(),
+            args: vec![
+                Unknown("X".to_string()),
+                List(ListTerm {
+                    front: vec![
+                        Unknown("X".to_string()),
+                    ],
+                    tail: ListTail::Unknown("Y".to_string())
+                }),
+            ]
+        });
         
         let goal = vec![(term1, term2)];
-        println!("{:?}", compute_most_gen_unifier(goal));
+        let unifier = compute_most_gen_unifier(goal);
+        println!("{:?}", &unifier);
+        if let Some(unifier) = &unifier {
+            println!("{:?}", solve_unifier(&unifier));
+        }
     }
 }
