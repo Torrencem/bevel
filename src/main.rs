@@ -21,6 +21,7 @@ mod span;
 mod error;
 use error::Error;
 mod checks;
+mod solver;
 
 use std::fs;
 use std::process::exit;
