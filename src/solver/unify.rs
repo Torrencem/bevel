@@ -10,12 +10,12 @@ pub type Goal = Vec<(Term, Term)>;
 pub fn solve_unifier(unif: &Unifier) -> Unifier {
     let mut res = Unifier::new();
 
-    for (key, val) in unif.iter() {
+    for (key, _) in unif.iter() {
         let mut result = Unknown(key.clone());
         let mut curr = key;
-        while let Some(val) = unif.get(curr) {
-            result = val.clone();
-            if let Unknown(x) = val {
+        while let Some(s) = unif.get(curr) {
+            result = s.clone();
+            if let Unknown(x) = s {
                 curr = x;
             } else {
                 break;
@@ -153,7 +153,7 @@ pub fn compute_most_gen_unifier(goal: Goal) -> Option<Unifier> {
         let mut done = true;
         // Since we haven't 'continue'd, that
         // indicates we should check if we're done
-        for (f, lhs, _) in equations.iter() {
+        for (f, _, _) in equations.iter() {
             if !f {
                 done = false;
                 break;

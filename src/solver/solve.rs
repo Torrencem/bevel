@@ -48,7 +48,7 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                                 for (k, v) in unifier.iter() {
                                     master.insert(k.clone(), v.clone());
                                 }
-                                let mut new_query_vec: Vec<Term> = curr_query.clone().goals[1..]
+                                let new_query_vec: Vec<Term> = curr_query.clone().goals[1..]
                                                  .iter()
                                                  .map(|other_goal| {
                                                     let mut copy = other_goal.clone();

@@ -1,4 +1,5 @@
 pub mod unify;
+use unify::solve_unifier;
 pub mod solve;
 pub mod parse;
 

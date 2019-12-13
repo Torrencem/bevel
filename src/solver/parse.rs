@@ -106,8 +106,8 @@ pub fn parse_statement<'p>(statement: &StatementNode<'p>) -> Vec<Term> {
     match &statement {
         StatementNode::Assignment(anode) => parse_assignment(&anode),
         StatementNode::Relate(rnode) => parse_relate(&rnode),
-        StatementNode::Refute(rnode) => unimplemented!(),
-        StatementNode::BinaryFact(bfnode) => unimplemented!(),
+        StatementNode::Refute(_) => unimplemented!(),
+        StatementNode::BinaryFact(_) => unimplemented!(),
         StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode),
     }
 }
@@ -268,7 +268,7 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
                 };
             let list_term = Term::List(ListTerm {
                 front: names,
-                tail: ListTail::End,
+                tail: list_tail,
             });
             let assign_term = Term::Compound(CompoundTerm {
                 name: "=".to_string(),

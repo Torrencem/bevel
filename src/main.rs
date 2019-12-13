@@ -80,7 +80,7 @@ fn main() {
         
         prog_rules.mangle_names();
 
-        let mut reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
+        let reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
 
         reader.set_prompt("?#>").expect("");
 

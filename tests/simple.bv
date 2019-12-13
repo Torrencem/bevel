@@ -10,8 +10,10 @@ grandfather(z) {
 
 head((x:xs)) ~ x;
 
-main() {
-	y ~ [1, 2, 3]
-	z ~ head(y)
-	relate z
+tail((x:xs)) ~ xs;
+
+second_elem((x:y:ys)) ~ y;
+
+second_head(l) {
+	relate head(tail(l))
 };
