@@ -5,8 +5,6 @@ use Term::*;
 
 use std::collections::{HashMap, VecDeque};
 
-pub type Unifier = HashMap<String, Term>;
-
 pub type Goal = Vec<(Term, Term)>;
 
 pub fn solve_unifier(unif: &Unifier) -> Unifier {

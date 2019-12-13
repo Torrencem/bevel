@@ -73,3 +73,52 @@ fn main() {
 
     println!("{}", s);
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::Rule;
+    use crate::ast::parse_program;
+    use crate::solver::parse;
+    use crate::solver::solve::*;
+    use crate::solver::*;
+
+    #[test]
+    fn test_parsing() {
+        let program = r#"
+parent('john) ~ 'jacob;
+parent('mark) ~ 'john;
+
+grandparent(x) {
+    y ~ parent(x)
+    z ~ parent(y)
+    relate z
+};
+"#;
+        let pairs = BevelParser::parse(Rule::program, program).unwrap();
+        let prog = parse_program(pairs, program);
+        let mut asrules = parse::parse_program(&prog);
+
+        dbg!(&asrules);
+
+        asrules.mangle_names();
+
+        dbg!(&asrules);
+        
+        let query = Query {
+            goals: vec![
+                Term::Compound(CompoundTerm {
+                    name: "grandparent".to_string(),
+                    args: vec![
+                        Term::Atom("'mark".to_string()),
+                        Term::Unknown("who".to_string()),
+                    ]
+                })
+            ]
+        };
+
+        let solution = solve(&asrules, query);
+        dbg!(solution);
+    }
+}
