@@ -189,6 +189,8 @@ impl Term {
                         if let List(lterm2) = subs {
                             lterm.front.append(&mut lterm2.front.clone());
                             lterm.tail = lterm2.tail.clone();
+                        } else if let Unknown(s) = subs {
+                            lterm.tail = ListTail::Unknown(s.clone());
                         } else {
                             return None;
                         }

@@ -5,10 +5,27 @@ pub mod parse;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use std::iter;
+use std::fmt::Write;
 
 use std::collections::HashMap;
 
 pub type Unifier = HashMap<String, Term>;
+
+pub fn fmt_unifier(unif: &Unifier) -> String {
+    let mut res = String::new();
+    let mut first = true;
+    for (key, val) in unif {
+        if !key.starts_with("<Tmp>") {
+            if first {
+                first = false;
+            } else {
+                write!(&mut res, ", ").expect("formattign error");
+            }
+            write!(&mut res, "{} = {:?}", &key, &val).expect("formatting error");
+        }
+    }
+    res
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rules {

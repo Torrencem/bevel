@@ -16,6 +16,7 @@ pub struct BevelParser;
 
 mod ast;
 use ast::parse_program;
+use crate::ast::parse::ParseNode;
 
 mod span;
 mod error;
@@ -31,6 +32,10 @@ use prolog_print::PrologPrint;
 
 extern crate annotate_snippets;
 
+extern crate linefeed;
+
+use linefeed::{Interface, ReadResult};
+
 fn quit(e: Error) -> ! {
     eprintln!("{}", e);
     exit(1)
@@ -45,6 +50,9 @@ fn main() {
                  .help("The bevel source input")
                  .required(true)
                  .index(1))
+            .arg(Arg::with_name("repl")
+                 .short("r")
+                 .help("Start a repl loop"))
             .get_matches();
     
     let input_file = matches.value_of("INPUT").unwrap();
@@ -67,11 +75,36 @@ fn main() {
         exit(1);
     }
     
-    let mut s = String::new();
+    if matches.is_present("repl") {
+        let mut prog_rules = solver::parse::parse_program(&prog);
+        
+        prog_rules.mangle_names();
 
-    prog.prolog_print(&mut s).unwrap_or_else(|e| quit(e));
+        let mut reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
 
-    println!("{}", s);
+        reader.set_prompt("?#>").expect("");
+
+        while let ReadResult::Input(input) = reader.read_line().unwrap() {
+            let raw_parse = BevelParser::parse(Rule::relation_call, &input).expect("Error parsing input!").peek().unwrap(); // TODO
+            let rcallnode = ast::RelationCallNode::parse(raw_parse, &input);
+            let as_terms = solver::parse::parse_relationcall(&rcallnode);
+            let query = solver::Query {
+                goals: as_terms
+            };
+            let solution = solver::solve::solve(&prog_rules, query);
+            
+            match &solution {
+                None => println!("fail"),
+                Some(solution) => println!("{}", solver::fmt_unifier(&solution)),
+            }
+        }
+    } else {
+        let mut s = String::new();
+
+        prog.prolog_print(&mut s).unwrap_or_else(|e| quit(e));
+
+        println!("{}", s);
+    }
 }
 
 

@@ -154,7 +154,7 @@ pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
 
 pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> String {
     let mut rng = thread_rng();
-    let name: String = format!("Tmp{}", iter::repeat(())
+    let name: String = format!("<Tmp>{}", iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
         .filter(|c| !c.is_digit(10))
         .take(6)

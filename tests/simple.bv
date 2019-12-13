@@ -1,0 +1,17 @@
+
+parent('john) ~ 'jacob;
+parent('jacob) ~ 'gdad;
+
+grandfather(z) {
+	y ~ parent(x)
+	z ~ parent(y)
+	relate x
+};
+
+head((x:xs)) ~ x;
+
+main() {
+	y ~ [1, 2, 3]
+	z ~ head(y)
+	relate z
+};
