@@ -139,7 +139,7 @@ fn check_relate_error_snippet(span1: &Span, fst_retno: usize, span2: &Span, snd_
             Annotation {
                 id: None,
                 label: Some("all relates in a function must have the same number of outputs".to_string()),
-                annotation_type: AnnotationType::Note,
+                annotation_type: AnnotationType::Error,
             },
         ],
         slices: vec![
@@ -195,7 +195,7 @@ fn check_odd_ops_snippet(span: &Span, source: &String) -> Snippet {
                     SourceAnnotation {
                         range: range,
                         label: format!("invalid operation here").to_string(),
-                        annotation_type: AnnotationType::Note
+                        annotation_type: AnnotationType::Error
                     },
                 ],
             },

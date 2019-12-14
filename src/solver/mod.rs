@@ -20,7 +20,7 @@ pub fn fmt_unifier(unif: &Unifier) -> String {
             if first {
                 first = false;
             } else {
-                write!(&mut res, ", ").expect("formattign error");
+                write!(&mut res, ", ").expect("formatting error");
             }
             write!(&mut res, "{} = {:?}", &key, &val).expect("formatting error");
         }

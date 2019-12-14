@@ -3,9 +3,14 @@ parent('john) ~ 'jacob;
 parent('jacob) ~ 'gdad;
 
 grandfather(z) {
-	y ~ parent(x)
-	z ~ parent(y)
 	relate x
+	z ~ parent(parent(x)) 
+};
+
+ancestor(x) ~ x;
+ancestor(x) {
+	y ~ parent(x)
+	relate ancestor(y)
 };
 
 head((x:xs)) ~ x;
@@ -17,3 +22,7 @@ second_elem((x:y:ys)) ~ y;
 second_head(l) {
 	relate head(tail(l))
 };
+
+# myfun(x) {
+# 	relate x * 2 + 1
+# };

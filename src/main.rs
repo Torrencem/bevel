@@ -82,12 +82,27 @@ fn main() {
 
         let reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
 
-        reader.set_prompt("?#>").expect("");
+        reader.set_prompt("?#> ").expect("");
 
         while let ReadResult::Input(input) = reader.read_line().unwrap() {
-            let raw_parse = BevelParser::parse(Rule::relation_call, &input).expect("Error parsing input!").peek().unwrap(); // TODO
-            let rcallnode = ast::RelationCallNode::parse(raw_parse, &input);
-            let as_terms = solver::parse::parse_relationcall(&rcallnode);
+            reader.add_history(input.clone());
+            let raw_parse = BevelParser::parse(Rule::query, &input).expect("Error parsing input!"); // TODO
+            let as_terms: Vec<solver::Term> = raw_parse.into_iter()
+                .map(|pair| {
+                    match pair.as_rule() {
+                        Rule::assignment | Rule::mul_assignment => {
+                            let rnode = ast::AssignmentNode::parse(pair, &input);
+                            solver::parse::parse_assignment(&rnode).into_iter()
+                        },
+                        Rule::relation_call => {
+                            let rcallnode = ast::RelationCallNode::parse(pair, &input);
+                            solver::parse::parse_relationcall(&rcallnode).into_iter()
+                        },
+                        _ => unreachable!()
+                    }
+                })
+                .flatten()
+                .collect();
             let query = solver::Query {
                 goals: as_terms
             };

@@ -28,7 +28,6 @@ num_compare = _{ leq | geq | eq | neq | gt | lt }
 	eq = { "==" }
 	neq = { "!=" }
 
-
 relation_decl = { ident ~ "(" ~ pattern_list ~ ")" }
 pattern_list = { (pattern ~ ("," ~ pattern)*)? }
 pattern = { empty_pat | num_literal | ident | atom | list_pattern | conslist_pattern}
@@ -67,3 +66,7 @@ block = {
 }
 
 program = _{ SOI ~ nl? ~ ((simple_relation | relation_block | multiple_relation) ~ ";" ~ nl)+ ~ EOI}
+
+// For use in REPL
+query_term = _{ (assignment | mul_assignment | relation_call) }
+query = _{ query_term ~ ("," ~ query_term)* }
