@@ -23,6 +23,10 @@ second_head(l) {
 	relate head(tail(l))
 };
 
-# myfun(x) {
-# 	relate x * 2 + 1
-# };
+inc(x) {
+	relate x + 1
+};
+
+myfun(x) {
+	relate x * 2 + 1
+};
