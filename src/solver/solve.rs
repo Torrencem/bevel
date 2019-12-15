@@ -1,8 +1,17 @@
 
 use crate::solver::*;
 use crate::solver::unify::*;
+use crate::solver::builtins::builtins;
+
+pub struct SolverState<'a> {
+    pub master: &'a mut Unifier,
+    pub curr_query: &'a Query,
+    pub new_query: &'a mut Query,
+    pub fact_indx: &'a mut usize,
+}
 
 pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
+    let builtins = builtins();
     let mut fact_indx: usize = 0;
     let mut master: Unifier = Unifier::new();
     let mut curr_query: Query = query;
@@ -26,40 +35,50 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
             Some(goal) => {
                 let mut skip = false;
                 let mut nomatching = true;
-                // Check for special goals here! TODO move this somewhere better
+                // Check for special goals here
                 if let Term::Compound(cterm) = goal {
-                    if cterm.name == "=" {
-                        let unification =
-                            compute_most_gen_unifier(vec![(cterm.args[0].clone(), cterm.args[1].clone())]);
-                        match unification {
-                            None => {
-                                match choice_points.pop() {
-                                    None => return None,
-                                    Some(choice_point) => {
-                                        master = choice_point.0;
-                                        curr_query = choice_point.1;
-                                        fact_indx = choice_point.2;
-                                        continue;
+                    match builtins.get(&cterm.name) {
+                        None => {},
+                        Some(builtin) => {
+                            let my_state = SolverState {
+                                master: &mut master,
+                                curr_query: &curr_query,
+                                new_query: &mut new_query,
+                                fact_indx: &mut fact_indx,
+                            };
+                            let builtin_res =
+                                builtin(&cterm, &my_state);
+                            match builtin_res {
+                                None => {
+                                    // backtrack
+                                    match choice_points.pop() {
+                                        None => return None,
+                                        Some(choice_point) => {
+                                            master = choice_point.0;
+                                            curr_query = choice_point.1;
+                                            fact_indx = choice_point.2;
+                                            continue;
+                                        }
                                     }
-                                }
-                            },
-                            Some(unifier) => {
-                                let unifier = solve_unifier(&unifier);
-                                for (k, v) in unifier.iter() {
-                                    master.insert(k.clone(), v.clone());
-                                }
-                                let new_query_vec: Vec<Term> = curr_query.clone().goals[1..]
-                                                 .iter()
-                                                 .map(|other_goal| {
-                                                    let mut copy = other_goal.clone();
-                                                    copy.substitute_all(&unifier);
-                                                    copy
-                                                 }).collect();
-                                new_query = Query { goals: new_query_vec };
-                                fact_indx = 0;
-                                skip = true;
-                                nomatching = false;
-                            },
+                                },
+                                Some(unifier) => {
+                                    let unifier = solve_unifier(&unifier);
+                                    for (k, v) in unifier.iter() {
+                                        master.insert(k.clone(), v.clone());
+                                    }
+                                    let new_query_vec: Vec<Term> = curr_query.clone().goals[1..]
+                                                     .iter()
+                                                     .map(|other_goal| {
+                                                        let mut copy = other_goal.clone();
+                                                        copy.substitute_all(&unifier);
+                                                        copy
+                                                     }).collect();
+                                    new_query = Query { goals: new_query_vec };
+                                    fact_indx = 0;
+                                    skip = true;
+                                    nomatching = false;
+                                },
+                            }
                         }
                     }
                 }

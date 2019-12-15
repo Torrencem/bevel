@@ -2,6 +2,7 @@ pub mod unify;
 use unify::solve_unifier;
 pub mod solve;
 pub mod parse;
+pub mod builtins;
 
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
@@ -11,6 +12,7 @@ use std::fmt::Write;
 use std::collections::HashMap;
 
 pub type Unifier = HashMap<String, Term>;
+
 
 pub fn fmt_unifier(unif: &Unifier) -> String {
     let mut res = String::new();
