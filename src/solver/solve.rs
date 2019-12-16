@@ -4,7 +4,7 @@ use crate::solver::unify::*;
 use crate::solver::builtins::builtins;
 use crate::REPL_FRAME_ID;
 use rand::prelude::RngCore;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng};
 
 pub struct SolverState<'a> {
     pub master: &'a mut Unifier,
