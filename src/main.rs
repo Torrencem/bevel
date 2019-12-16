@@ -77,9 +77,9 @@ fn main() {
     }
     
     if matches.is_present("repl") {
-        let prog_rules = solver::parse::parse_program(&prog);
+        let mut prog_rules = solver::parse::parse_program(&prog);
 
-        // prog_rules.mangle_names();
+        solver::optimize::apply_optimizations(&mut prog_rules);
 
         let reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
 

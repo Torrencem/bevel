@@ -3,13 +3,13 @@ use unify::solve_unifier;
 pub mod solve;
 pub mod parse;
 pub mod builtins;
+pub mod optimize;
 
 use std::fmt::Write;
 
 use std::collections::HashMap;
 
 pub type Unifier = HashMap<UnknownContents, Term>;
-
 
 pub fn fmt_unifier(unif: &Unifier) -> String {
     let mut res = String::new();
