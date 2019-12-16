@@ -12,9 +12,9 @@
 # 	y ~ parent(x)
 # 	relate ancestor(y)
 # };
-#
-# head((x:xs)) ~ x;
-#
+
+head((x:_)) ~ x;
+
 # tail((x:xs)) ~ xs;
 #
 # second_elem((x:y:ys)) ~ y;

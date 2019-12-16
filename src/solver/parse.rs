@@ -79,7 +79,18 @@ pub fn parse_relation_block<'p>(rblock: &RelationBlock<'p>, frame_id: u32, cterm
 
 pub fn parse_constant<'p>(cnode: &ConstantNode<'p>, frame_id: u32) -> Term {
     match &cnode.contents {
-        ConstantContents::EmptyPattern => { unimplemented!() },
+        ConstantContents::EmptyPattern => {
+            let mut rng = thread_rng();
+            let name = UnknownContents {
+                name: format!("<Tmp_WC>{}", iter::repeat(())
+                    .map(|()| rng.sample(Alphanumeric))
+                    .filter(|c| !c.is_digit(10))
+                    .take(6)
+                    .collect::<String>()),
+                frame_id: frame_id,
+            };
+            Term::Unknown(name)
+        },
         ConstantContents::Atom(s) => Term::Atom(s.clone()),
         ConstantContents::Literal(s) => Term::Number(s.parse().unwrap()),
         ConstantContents::Var(s) => Term::Unknown(UnknownContents {
