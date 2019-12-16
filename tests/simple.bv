@@ -15,6 +15,12 @@
 
 head((x:_)) ~ x;
 
+sameleading((x:y:_)) {
+    x == y
+};
+
+samehead((x:_)) ~ (x:_);
+
 # tail((x:xs)) ~ xs;
 #
 # second_elem((x:y:ys)) ~ y;
@@ -39,6 +45,10 @@ head((x:_)) ~ x;
 # 	x < 0
 # 	relate 0-x
 # };
+
+ftwo((x:y:zs)) {
+	x == y
+};
 
 inc(a) {
 	note ~ a + 1

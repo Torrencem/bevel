@@ -15,5 +15,10 @@ num-rational = "0.2.2"
 [dependencies.annotate-snippets]
 version = "0.6.1"
 default-features = false
-
 features = ["color"]
+
+[dev-dependencies]
+assert_cmd = "0.12.0"
+tempfile = "3"
+predicates = "1.0.2"
+

@@ -71,7 +71,7 @@ impl fmt::Display for Term {
                 frame_id: _,
             }) => write!(f, "{}", s),
             Term::Atom(s) => {
-                write!(f, "{}", s[1..].to_string())
+                write!(f, "{}", s.to_string())
             },
             Term::Number(n) => {
                 write!(f, "{}", n)
