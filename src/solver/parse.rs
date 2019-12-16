@@ -198,7 +198,7 @@ pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>, frame_id: u32) -> V
 pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, frame_id: u32, res: &mut Vec<Term>) -> UnknownContents {
     let mut rng = thread_rng();
     let name = UnknownContents {
-        name: format!("<Tmp>{}", iter::repeat(())
+        name: format!("<Free>{}", iter::repeat(())
             .map(|()| rng.sample(Alphanumeric))
             .filter(|c| !c.is_digit(10))
             .take(6)

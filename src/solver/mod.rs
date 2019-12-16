@@ -5,6 +5,10 @@ pub mod parse;
 pub mod builtins;
 pub mod optimize;
 
+use std::fmt;
+
+use num_rational::Rational32;
+
 use std::fmt::Write;
 
 use std::collections::HashMap;
@@ -15,13 +19,13 @@ pub fn fmt_unifier(unif: &Unifier) -> String {
     let mut res = String::new();
     let mut first = true;
     for (key, val) in unif {
-        if !key.name.starts_with("<Tmp>") {
+        if !key.name.starts_with("<Free>") {
             if first {
                 first = false;
             } else {
                 write!(&mut res, ", ").expect("formatting error");
             }
-            write!(&mut res, "{} = {:?}", &key.name, &val).expect("formatting error");
+            write!(&mut res, "{} = {}", &key.name, &val).expect("formatting error");
         }
     }
     res
@@ -54,9 +58,71 @@ pub struct UnknownContents {
 pub enum Term {
     Unknown(UnknownContents),
     Atom(String),
-    Number(f32),
+    Number(Rational32),
     List(ListTerm),
     Compound(CompoundTerm),
+}
+
+impl fmt::Display for Term {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Term::Unknown(UnknownContents{
+                name: s,
+                frame_id: _,
+            }) => write!(f, "{}", s),
+            Term::Atom(s) => {
+                write!(f, "{}", s[1..].to_string())
+            },
+            Term::Number(n) => {
+                write!(f, "{}", n)
+            },
+            Term::List(lterm) => {
+                write!(f, "{}", lterm)
+            },
+            Term::Compound(cterm) => {
+                write!(f, "{}", cterm)
+            },
+        }
+    }
+}
+
+impl fmt::Display for ListTerm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
+        let mut first = true;
+        for term in self.front.iter() {
+            if first {
+                first = false;
+            } else {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", term)?;
+        }
+        match &self.tail {
+            ListTail::End => write!(f, "]"),
+            ListTail::Unknown(UnknownContents{
+                name: s,
+                frame_id: _,
+            }) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl fmt::Display for CompoundTerm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        write!(f, "(")?;
+        let mut first = true;
+        for term in self.args.iter() {
+            if first {
+                first = false;
+            } else {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", term)?;
+        }
+        write!(f, ")")
+    }
 }
 
 impl Term {

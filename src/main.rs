@@ -35,6 +35,8 @@ extern crate linefeed;
 
 use linefeed::{Interface, ReadResult};
 
+extern crate num_rational;
+
 const REPL_FRAME_ID: u32 = 1;
 
 fn quit(e: Error) -> ! {

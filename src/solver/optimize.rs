@@ -29,7 +29,7 @@ pub fn apply_unneccessary_variable_opt(rule: &mut Rule) -> bool {
                 if let (Term::Unknown(a), Term::Unknown(b))
                     = (&args[0], &args[1]) {
                     if a.name.starts_with("_<") 
-                        || a.name.starts_with("<Tmp>"){
+                        || a.name.starts_with("<Free>"){
                         unif.insert(b.clone(), Term::Unknown(a.clone()));
                     } else {
                         unif.insert(a.clone(), Term::Unknown(b.clone()));
