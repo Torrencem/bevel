@@ -202,3 +202,50 @@ fn check_odd_ops_snippet(span: &Span, source: &String) -> Snippet {
         ],
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::*;
+
+    #[test]
+    pub fn invoke_relate_mismatch() {
+        let program_input =
+r#"
+impossible(x) {
+    x > 1
+    relate [1, x]
+    relate (x, 2)
+};
+"#.to_string();
+        let pairs = BevelParser::parse(Rule::program, &program_input).unwrap();
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let errs = checks::perform_checks(&prog, "test".to_string());
+        assert!(errs.len() == 1);
+        let err_msg = format!("{}", errs[0]).to_string();
+        assert!(err_msg.contains("test"));
+        assert!(err_msg.contains("relate (x, 2)"));
+        assert!(err_msg.contains("relate [1, x]"));
+    }
+
+    #[test]
+    pub fn invoke_oddops_error() {
+        let program_input =
+r#"
+impossible(sthing) {
+    relate sthing + [1, 2]
+};
+"#.to_string();
+        let pairs = BevelParser::parse(Rule::program, &program_input).unwrap();
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let errs = checks::perform_checks(&prog, "test".to_string());
+        assert!(errs.len() == 1);
+        let err_msg = format!("{}", errs[0]).to_string();
+        assert!(err_msg.contains("test"));
+        assert!(err_msg.contains("sthing + [1, 2]"))
+    }
+}

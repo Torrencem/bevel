@@ -451,6 +451,7 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
 
 impl<'p> ParseNode<'p> for ExpressionNode<'p> {
     fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
+        // dbg!(&pair);
         let pairs = pair.into_inner();
 
         let climber = PrecClimber::new(vec![
@@ -504,10 +505,8 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                         },
                         _ => {
                             // Parenthetical expression
-                            let mut innerds = pair.into_inner();
-                            let inner = innerds.next().unwrap();
 
-                            ExpressionNode::parse(inner, source).contents
+                            ExpressionNode::parse(pair, source).contents
                         }
                     }
                 },
@@ -531,7 +530,7 @@ impl<'p> ParseNode<'p> for ExpressionNode<'p> {
                 }
             }
         };
-        
+        // dbg!(&pairs);
         climber.climb(pairs, primary, infix)
     }
 
