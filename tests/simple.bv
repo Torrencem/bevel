@@ -1,32 +1,59 @@
 
-parent('john) ~ 'jacob;
-parent('jacob) ~ 'gdad;
+# parent('john) ~ 'jacob;
+# parent('jacob) ~ 'gdad;
+#
+# grandfather(z) {
+# 	relate x
+# 	z ~ parent(parent(x)) 
+# };
+#
+# ancestor(x) ~ x;
+# ancestor(x) {
+# 	y ~ parent(x)
+# 	relate ancestor(y)
+# };
+#
+# head((x:xs)) ~ x;
+#
+# tail((x:xs)) ~ xs;
+#
+# second_elem((x:y:ys)) ~ y;
+#
+# second_head(l) {
+# 	relate head(tail(l))
+# };
+#
+# inc(x) {
+# 	relate x + 1
+# };
+#
+# myfun(x) {
+# 	relate x * 2 + 1
+# };
+#
+# abs(x) {
+# 	x >= 0
+# 	relate x
+# };
+# abs(x) {
+# 	x < 0
+# 	relate 0-x
+# };
 
-grandfather(z) {
-	relate x
-	z ~ parent(parent(x)) 
+# NOTE: Currently, we need to mangle names differently on the
+# same procedure called twice from the same context, so the names
+# don't clash within (i.e. recursive calls)
+# The solution to this is stack frames
+
+ident(0) ~ 0;
+ident(x) {
+	x > 0
+	relate ident(x - 1) + 1
 };
 
-ancestor(x) ~ x;
-ancestor(x) {
-	y ~ parent(x)
-	relate ancestor(y)
-};
-
-head((x:xs)) ~ x;
-
-tail((x:xs)) ~ xs;
-
-second_elem((x:y:ys)) ~ y;
-
-second_head(l) {
-	relate head(tail(l))
-};
-
-inc(x) {
-	relate x + 1
-};
-
-myfun(x) {
-	relate x * 2 + 1
-};
+# fib(0) ~ 1;
+# fib(1) ~ 1;
+# fib(x) {
+# 	x > 1
+# 	relate fib(x - 1) + fib(x - 2)
+# };

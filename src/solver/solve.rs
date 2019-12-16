@@ -19,6 +19,7 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
     // A stack of querys, states, and fact indices
     let mut choice_points: Vec<(Unifier, Query, usize)> = Vec::new();
     loop {
+        dbg!(&curr_query);
         match curr_query.goals.get(0) {
             None => {
                 let unif = solve_unifier(&master);
@@ -86,10 +87,11 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                 // the current goal
                 if !skip {
                     for clause in facts.contents[fact_indx..].iter() {
+                        // println!("unify: {:?},\n{:?}", &goal, &clause.gives);
                         let unification =
                             compute_most_gen_unifier(vec![(goal.clone(), Term::Compound(clause.gives.clone()))]);
                         match unification {
-                            None => { fact_indx += 1; },
+                            None => { fact_indx += 1; println!("reject\n"); },
                             Some(unifier) => {
                                 let unifier = solve_unifier(&unifier);
                                 // This clause matches!

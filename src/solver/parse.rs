@@ -107,9 +107,32 @@ pub fn parse_statement<'p>(statement: &StatementNode<'p>) -> Vec<Term> {
         StatementNode::Assignment(anode) => parse_assignment(&anode),
         StatementNode::Relate(rnode) => parse_relate(&rnode),
         StatementNode::Refute(_) => unimplemented!(),
-        StatementNode::BinaryFact(_) => unimplemented!(),
+        StatementNode::BinaryFact(brnode) => parse_bfactnode(&brnode),
         StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode),
     }
+}
+
+pub fn parse_bfactnode<'p>(brnode: &BinaryFactNode) -> Vec<Term> {
+    let mut res = vec![];
+    let left_name = parse_expr_name(&brnode.lhs, &mut res);
+    let right_name = parse_expr_name(&brnode.rhs, &mut res);
+    let op_name = match brnode.op {
+        BinaryFactOperation::Gt => ">".to_string(),
+        BinaryFactOperation::Lt => "<".to_string(),
+        BinaryFactOperation::Leq => "<=".to_string(),
+        BinaryFactOperation::Geq => ">=".to_string(),
+        BinaryFactOperation::Equ => "==".to_string(),
+        BinaryFactOperation::Neq => "!=".to_string(),
+    };
+    let comp_term = Term::Compound(CompoundTerm {
+        name: op_name,
+        args: vec![
+            Term::Unknown(left_name),
+            Term::Unknown(right_name),
+        ]
+    });
+    res.push(comp_term);
+    res
 }
 
 pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
