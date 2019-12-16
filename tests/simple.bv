@@ -40,10 +40,18 @@
 # 	relate 0-x
 # };
 
-# NOTE: Currently, we need to mangle names differently on the
-# same procedure called twice from the same context, so the names
-# don't clash within (i.e. recursive calls)
-# The solution to this is stack frames
+inc(a) {
+	note ~ a + 1
+	relate note
+};
+
+# Tests to make sure stack frames are doing their jobs
+
+main(x) {
+	y ~ inc(x)
+	z ~ inc(y)
+	relate z
+};
 
 ident(0) ~ 0;
 ident(x) {
@@ -51,9 +59,9 @@ ident(x) {
 	relate ident(x - 1) + 1
 };
 
-# fib(0) ~ 1;
-# fib(1) ~ 1;
-# fib(x) {
-# 	x > 1
-# 	relate fib(x - 1) + fib(x - 2)
-# };
+fib(0) ~ 1;
+fib(1) ~ 1;
+fib(x) {
+	x > 1
+	relate fib(x - 1) + fib(x - 2)
+};

@@ -35,6 +35,8 @@ extern crate linefeed;
 
 use linefeed::{Interface, ReadResult};
 
+const REPL_FRAME_ID: u32 = 1;
+
 fn quit(e: Error) -> ! {
     eprintln!("{}", e);
     exit(1)
@@ -75,7 +77,7 @@ fn main() {
     }
     
     if matches.is_present("repl") {
-        let mut prog_rules = solver::parse::parse_program(&prog);
+        let prog_rules = solver::parse::parse_program(&prog);
 
         // prog_rules.mangle_names();
 
@@ -91,11 +93,11 @@ fn main() {
                     match pair.as_rule() {
                         Rule::assignment | Rule::mul_assignment => {
                             let rnode = ast::AssignmentNode::parse(pair, &input);
-                            solver::parse::parse_assignment(&rnode).into_iter()
+                            solver::parse::parse_assignment(&rnode, REPL_FRAME_ID).into_iter()
                         },
                         Rule::relation_call => {
                             let rcallnode = ast::RelationCallNode::parse(pair, &input);
-                            solver::parse::parse_relationcall(&rcallnode).into_iter()
+                            solver::parse::parse_relationcall(&rcallnode, REPL_FRAME_ID).into_iter()
                         },
                         _ => unreachable!()
                     }

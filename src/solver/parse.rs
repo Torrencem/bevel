@@ -2,6 +2,7 @@
 use crate::solver::*;
 use crate::ast::*;
 
+use rand::prelude::RngCore;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use std::iter;
@@ -20,18 +21,20 @@ pub fn parse_program<'p>(pnode: &ProgramNode<'p>) -> Rules {
 }
 
 pub fn parse_relation<'p>(rnode: &RelationNode<'p>) -> Rule {
-    let mut cterm: CompoundTerm = parse_relation_pattern(&rnode.relation, &rnode.params);
-    let subquery: Query = parse_relation_block(&rnode.block, &mut cterm);
+    let mut rng = thread_rng();
+    let frame_id: u32 = rng.next_u32();
+    let mut cterm: CompoundTerm = parse_relation_pattern(&rnode.relation, &rnode.params, frame_id);
+    let subquery: Query = parse_relation_block(&rnode.block, frame_id, &mut cterm);
     Rule {
         gives: cterm,
         requires: subquery
     }
 }
 
-pub fn parse_relation_pattern<'p>(rid: &RelationId<'p>, clist: &ConstList<'p>) -> CompoundTerm {
+pub fn parse_relation_pattern<'p>(rid: &RelationId<'p>, clist: &ConstList<'p>, frame_id: u32) -> CompoundTerm {
     let my_terms: Vec<Term> = clist.constants.iter()
         .map(|cterm| {
-            parse_constant(&cterm)
+            parse_constant(&cterm, frame_id)
         })
         .collect();
     CompoundTerm {
@@ -40,12 +43,12 @@ pub fn parse_relation_pattern<'p>(rid: &RelationId<'p>, clist: &ConstList<'p>) -
     }
 }
 
-pub fn parse_relation_block<'p>(rblock: &RelationBlock<'p>, cterm: &mut CompoundTerm) -> Query {
+pub fn parse_relation_block<'p>(rblock: &RelationBlock<'p>, frame_id: u32, cterm: &mut CompoundTerm) -> Query {
     match rblock {
         RelationBlock::Const(clist) => {
             let mut my_terms: Vec<Term> = clist.constants.iter()
                 .map(|cterm| {
-                    parse_constant(&cterm)
+                    parse_constant(&cterm, frame_id)
                 })
                 .collect();
             cterm.args.append(&mut my_terms);
@@ -56,12 +59,15 @@ pub fn parse_relation_block<'p>(rblock: &RelationBlock<'p>, cterm: &mut Compound
         RelationBlock::Block(bnode) => {
             let num_results = find_num_results(&bnode);
             let mut new_args = (0..num_results).map(|num| {
-                Term::Unknown(format!("Result{}", num))
+                Term::Unknown(UnknownContents {
+                    name: format!("Result{}", num),
+                    frame_id: frame_id
+                })
             }).collect::<Vec<Term>>();
             cterm.args.append(&mut new_args);
             let mut goals: Vec<Term> = vec![];
             for statement in bnode.statements.iter() {
-                let mut as_goals: Vec<Term> = parse_statement(&statement);
+                let mut as_goals: Vec<Term> = parse_statement(&statement, frame_id);
                 goals.append(&mut as_goals);
             }
             Query {
@@ -71,16 +77,19 @@ pub fn parse_relation_block<'p>(rblock: &RelationBlock<'p>, cterm: &mut Compound
     }
 }
 
-pub fn parse_constant<'p>(cnode: &ConstantNode<'p>) -> Term {
+pub fn parse_constant<'p>(cnode: &ConstantNode<'p>, frame_id: u32) -> Term {
     match &cnode.contents {
         ConstantContents::EmptyPattern => { unimplemented!() },
         ConstantContents::Atom(s) => Term::Atom(s.clone()),
         ConstantContents::Literal(s) => Term::Number(s.parse().unwrap()),
-        ConstantContents::Var(s) => Term::Unknown(s.clone()),
+        ConstantContents::Var(s) => Term::Unknown(UnknownContents {
+            name: s.clone(),
+            frame_id: frame_id
+        }),
         ConstantContents::List(vec) => {
             Term::List(ListTerm {
                 front: vec.iter().map(|constant| {
-                    parse_constant(constant)
+                    parse_constant(constant, frame_id)
                 }).collect(),
                 tail: ListTail::End,
             })
@@ -88,10 +97,10 @@ pub fn parse_constant<'p>(cnode: &ConstantNode<'p>) -> Term {
         ConstantContents::ConsList(vec) => {
             Term::List(ListTerm {
                 front: vec[..vec.len() - 1].iter().map(|constant| {
-                    parse_constant(constant)
+                    parse_constant(constant, frame_id)
                 }).collect(),
-                tail: ListTail::Unknown({ 
-                    if let Term::Unknown(s) = parse_constant(&vec[vec.len() - 1]) {
+                tail: ListTail::Unknown({
+                    if let Term::Unknown(s) = parse_constant(&vec[vec.len() - 1], frame_id) {
                         s.clone()
                     } else {
                         unreachable!()
@@ -102,20 +111,20 @@ pub fn parse_constant<'p>(cnode: &ConstantNode<'p>) -> Term {
     }
 }
 
-pub fn parse_statement<'p>(statement: &StatementNode<'p>) -> Vec<Term> {
+pub fn parse_statement<'p>(statement: &StatementNode<'p>, frame_id: u32) -> Vec<Term> {
     match &statement {
-        StatementNode::Assignment(anode) => parse_assignment(&anode),
-        StatementNode::Relate(rnode) => parse_relate(&rnode),
+        StatementNode::Assignment(anode) => parse_assignment(&anode, frame_id),
+        StatementNode::Relate(rnode) => parse_relate(&rnode, frame_id),
         StatementNode::Refute(_) => unimplemented!(),
-        StatementNode::BinaryFact(brnode) => parse_bfactnode(&brnode),
-        StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode),
+        StatementNode::BinaryFact(brnode) => parse_bfactnode(&brnode, frame_id),
+        StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode, frame_id),
     }
 }
 
-pub fn parse_bfactnode<'p>(brnode: &BinaryFactNode) -> Vec<Term> {
+pub fn parse_bfactnode<'p>(brnode: &BinaryFactNode, frame_id: u32) -> Vec<Term> {
     let mut res = vec![];
-    let left_name = parse_expr_name(&brnode.lhs, &mut res);
-    let right_name = parse_expr_name(&brnode.rhs, &mut res);
+    let left_name = parse_expr_name(&brnode.lhs, frame_id, &mut res);
+    let right_name = parse_expr_name(&brnode.rhs, frame_id, &mut res);
     let op_name = match brnode.op {
         BinaryFactOperation::Gt => ">".to_string(),
         BinaryFactOperation::Lt => "<".to_string(),
@@ -135,7 +144,7 @@ pub fn parse_bfactnode<'p>(brnode: &BinaryFactNode) -> Vec<Term> {
     res
 }
 
-pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
+pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>, frame_id: u32) -> Vec<Term> {
     // If the rhs is not a compound, then make the assignment a special
     // compound =(X, Y) which (obviously) always resolves to X = Y
     match &assignment.rhs.contents {
@@ -143,11 +152,11 @@ pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
             let mut res = vec![];
             let mut names = vec![];
             for expr in args {
-                names.push(Term::Unknown(parse_expr_name(&expr, &mut res)));
+                names.push(Term::Unknown(parse_expr_name(&expr, frame_id, &mut res)));
             }
             let mut extra_args = assignment.lhs.constants.iter()
                 .map(|constant| {
-                    parse_constant(constant)
+                    parse_constant(constant, frame_id)
                 }).collect();
 
             names.append(&mut extra_args);
@@ -161,11 +170,11 @@ pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
         },
         _ => {
             let mut res = vec![];
-            let name = parse_expr_name(&assignment.rhs, &mut res);
+            let name = parse_expr_name(&assignment.rhs, frame_id, &mut res);
             let assign_term = Term::Compound(CompoundTerm {
                 name: "=".to_string(),
                 args: vec![
-                    parse_constant(&assignment.lhs.constants[0]),
+                    parse_constant(&assignment.lhs.constants[0], frame_id),
                     Term::Unknown(name),
                 ],
             });
@@ -175,16 +184,19 @@ pub fn parse_assignment<'p>(assignment: &AssignmentNode<'p>) -> Vec<Term> {
     }
 }
 
-pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> String {
+pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, frame_id: u32, res: &mut Vec<Term>) -> UnknownContents {
     let mut rng = thread_rng();
-    let name: String = format!("<Tmp>{}", iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .filter(|c| !c.is_digit(10))
-        .take(6)
-        .collect::<String>());
+    let name = UnknownContents {
+        name: format!("<Tmp>{}", iter::repeat(())
+            .map(|()| rng.sample(Alphanumeric))
+            .filter(|c| !c.is_digit(10))
+            .take(6)
+            .collect::<String>()),
+        frame_id: frame_id,
+    };
     match &expr.contents {
         ExpressionContents::Const(cnode) => {
-            let cterm = parse_constant(&cnode);
+            let cterm = parse_constant(&cnode, frame_id);
             let assign_term = Term::Compound(CompoundTerm {
                 name: "=".to_string(),
                 args: vec![
@@ -195,8 +207,8 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
             res.push(assign_term);
         },
         ExpressionContents::Operation { op, lhs, rhs } => {
-            let u1 = parse_expr_name(&lhs, res);
-            let u2 = parse_expr_name(&rhs, res);
+            let u1 = parse_expr_name(&lhs, frame_id, res);
+            let u2 = parse_expr_name(&rhs, frame_id, res);
             let op_str = match op {
                 BinaryOperation::Add => "+",
                 BinaryOperation::Sub => "-",
@@ -217,7 +229,7 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
         ExpressionContents::Call { rel, args } => {
             let mut names = vec![];
             for expr in args {
-                names.push(Term::Unknown(parse_expr_name(&expr, res)));
+                names.push(Term::Unknown(parse_expr_name(&expr, frame_id, res)));
             }
             names.push(Term::Unknown(name.clone()));
             let comp_term = Term::Compound(CompoundTerm {
@@ -229,7 +241,7 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
         ExpressionContents::List { vals } => {
             let mut names = vec![];
             for expr in vals.iter() {
-                names.push(Term::Unknown(parse_expr_name(&expr, res)));
+                names.push(Term::Unknown(parse_expr_name(&expr, frame_id, res)));
             }
             let list_term = Term::List(ListTerm {
                 front: names,
@@ -247,29 +259,35 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
         ExpressionContents::ConsList { vals } => {
             let mut names = vec![];
             for expr in vals[..vals.len() - 1].iter() {
-                names.push(Term::Unknown(parse_expr_name(&expr, res)));
+                names.push(Term::Unknown(parse_expr_name(&expr, frame_id, res)));
             }
             let list_tail =
                 match &vals[vals.len() - 1].contents {
                     ExpressionContents::List { vals } => {
                         for expr in vals {
-                            names.push(Term::Unknown(parse_expr_name(&expr, res)));
+                            names.push(Term::Unknown(parse_expr_name(&expr, frame_id, res)));
                         }
                         ListTail::End
                     },
                     ExpressionContents::Const(cnode) => {
                         match &cnode.contents {
                             ConstantContents::Var(s) => {
-                                ListTail::Unknown(s.clone())
+                                ListTail::Unknown(UnknownContents {
+                                    name: s.clone(),
+                                    frame_id: frame_id
+                                })
                             },
                             ConstantContents::List(l) => {
                                 for expr in l {
-                                    let new_name: String = format!("Tmp{}", iter::repeat(())
-                                        .map(|()| rng.sample(Alphanumeric))
-                                        .filter(|c| !c.is_digit(10))
-                                        .take(6)
-                                        .collect::<String>());
-                                    let cterm = parse_constant(expr);
+                                    let new_name = UnknownContents {
+                                        name: format!("Tmp{}", iter::repeat(())
+                                            .map(|()| rng.sample(Alphanumeric))
+                                            .filter(|c| !c.is_digit(10))
+                                            .take(6)
+                                            .collect::<String>()),
+                                        frame_id: frame_id
+                                    };
+                                    let cterm = parse_constant(expr, frame_id);
                                     let assign_term = Term::Compound(CompoundTerm {
                                         name: "=".to_string(),
                                         args: vec![
@@ -306,11 +324,11 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, res: &mut Vec<Term>) -> St
     name
 }
 
-pub fn parse_relationcall<'p>(rcallnode: &RelationCallNode<'p>) -> Vec<Term> {
+pub fn parse_relationcall<'p>(rcallnode: &RelationCallNode<'p>, frame_id: u32) -> Vec<Term> {
     let mut res = vec![];
     let mut names = vec![];
     for expr in rcallnode.args.iter() {
-        names.push(Term::Unknown(parse_expr_name(&expr, &mut res)));
+        names.push(Term::Unknown(parse_expr_name(&expr, frame_id, &mut res)));
     }
     let cterm = Term::Compound(CompoundTerm {
         name: rcallnode.rel.name.clone(),
@@ -320,17 +338,20 @@ pub fn parse_relationcall<'p>(rcallnode: &RelationCallNode<'p>) -> Vec<Term> {
     res
 }
 
-pub fn parse_relate<'p>(rnode: &RelateNode<'p>) -> Vec<Term> {
+pub fn parse_relate<'p>(rnode: &RelateNode<'p>, frame_id: u32) -> Vec<Term> {
     let mut res = vec![];
     let mut names = vec![];
     for expr in rnode.result.iter() {
-        names.push(Term::Unknown(parse_expr_name(&expr, &mut res)));
+        names.push(Term::Unknown(parse_expr_name(&expr, frame_id, &mut res)));
     }
     for i in 0..rnode.result.len() {
         let assign_term = Term::Compound(CompoundTerm {
             name: "=".to_string(),
             args: vec![
-                Term::Unknown(format!("Result{}", i).to_string()),
+                Term::Unknown(UnknownContents {
+                    name: format!("Result{}", i).to_string(),
+                    frame_id: frame_id
+                }),
                 names[i].clone(),
             ]
         });

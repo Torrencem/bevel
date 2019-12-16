@@ -164,7 +164,7 @@ pub fn compute_most_gen_unifier(goal: Goal) -> Option<Unifier> {
         }
     }
 
-    let mut res: HashMap<String, Term> = HashMap::with_capacity(equations.len());
+    let mut res: HashMap<UnknownContents, Term> = HashMap::with_capacity(equations.len());
     for (_, lhs, rhs) in equations {
         if let Unknown(s) = lhs {
             res.insert(s, rhs);
@@ -177,7 +177,7 @@ impl Term {
     // Returns None if trying to substitute like this example:
     // [H | T] with subs T/100
     // can't work because T *must* be a list
-    pub fn simple_substitution(&mut self, unknown: &String, subs: &Term) -> Option<()> {
+    pub fn simple_substitution(&mut self, unknown: &UnknownContents, subs: &Term) -> Option<()> {
         match self {
             Unknown(s) if s == unknown => {
                 *self = subs.clone();
@@ -214,46 +214,5 @@ impl Term {
             self.simple_substitution(unknown, subs)?;
         }
         Some(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_unify() {
-        let term1 = Compound(CompoundTerm {
-            name: "member".to_string(),
-            args: vec![
-                Unknown("Z".to_string()),
-                List(ListTerm {
-                    front: vec![
-                        Atom("a".to_string()),
-                        Atom("b".to_string())
-                    ],
-                    tail: ListTail::End
-                }),
-            ]
-        });
-        let term2 = Compound(CompoundTerm {
-            name: "member".to_string(),
-            args: vec![
-                Unknown("X".to_string()),
-                List(ListTerm {
-                    front: vec![
-                        Unknown("X".to_string()),
-                    ],
-                    tail: ListTail::Unknown("Y".to_string())
-                }),
-            ]
-        });
-        
-        let goal = vec![(term1, term2)];
-        let unifier = compute_most_gen_unifier(goal);
-        println!("{:?}", &unifier);
-        if let Some(unifier) = &unifier {
-            println!("{:?}", solve_unifier(&unifier));
-        }
     }
 }
