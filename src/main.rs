@@ -13,6 +13,10 @@ extern crate pest_derive;
 extern crate annotate_snippets;
 extern crate linefeed;
 extern crate num_rational;
+#[cfg(test)]
+extern crate assert_cmd;
+#[cfg(test)]
+extern crate predicates;
 
 use pest::Parser;
 

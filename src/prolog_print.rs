@@ -351,3 +351,192 @@ impl<'p> PrologPrintVal for ExpressionNode<'p> {
         Ok(name)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use crate::ast::parse_program;
+
+    use assert_cmd::Command;
+    use std;
+    use std::fs::File;
+    use std::io::{Write};
+    use predicates::prelude::*;
+    use predicate::str::contains;
+
+    #[test]
+    pub fn test_fib() -> Result<(), Box<dyn std::error::Error>> {
+        let program_input =
+r#"
+fib(0) ~ 1;
+fib(1) ~ 1;
+fib(x) {
+    x > 1
+    relate fib(x - 1) + fib(x - 2)
+};
+"#.to_string();
+
+        let pairs = BevelParser::parse(Rule::program, &program_input)?;
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let mut source = String::new();
+
+        prog.prolog_print(&mut source)?;
+        
+        let mut file = File::create("__test__fib.pl")?;
+        write!(file, "{}", source)?;
+
+        Command::new("swipl")
+            .arg("__test__fib.pl")
+            .write_stdin("[__test__fib].\nfib(7, Y).")
+            .assert()
+            .stdout(contains("Y = 21"));
+        
+        std::fs::remove_file("__test__fib.pl")?;
+        
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_family() -> Result<(), Box<dyn std::error::Error>> {
+        let program_input =
+r#"
+parent('matt) ~ 'kathy;
+parent('kathy) ~ 'gdad;
+parent('kathy) ~ 'gmom;
+male() ~ 'matt;
+male() ~ 'gdad;
+female() ~ 'kathy;
+female() ~ 'gmom;
+grandfather(x) {
+    gparent ~ parent(parent(x))
+    male(gparent)
+    relate gparent
+};
+"#.to_string();
+        let pairs = BevelParser::parse(Rule::program, &program_input)?;
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let mut source = String::new();
+
+        prog.prolog_print(&mut source)?;
+        
+        let mut file = File::create("__test__names.pl")?;
+        write!(file, "{}", source)?;
+
+        Command::new("swipl")
+            .arg("__test__names.pl")
+            .write_stdin("[__test__names].\ngrandfather(matt, Gfather).")
+            .assert()
+            .stdout(contains("Gfather = gdad"));
+        
+        Command::new("swipl")
+            .arg("__test__names.pl")
+            .write_stdin("[__test__names].\ngrandfather(kathy, Gfather).")
+            .assert()
+            .stdout(contains("false."));
+        
+        Command::new("swipl")
+            .arg("__test__names.pl")
+            .write_stdin("[__test__names].\ngrandfather(matt, Nbody), parent(matt, Nbody).")
+            .assert()
+            .stdout(contains("false."));
+        
+        std::fs::remove_file("__test__names.pl")?;
+        
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_listy() -> Result<(), Box<dyn std::error::Error>> {
+        let program_input =
+r#"
+head((x:_)) ~ x;
+
+sameleading((x:y:_)) {
+    x == y
+};
+
+samehead((x:_)) ~ (x:_);
+
+"#.to_string();
+        let pairs = BevelParser::parse(Rule::program, &program_input)?;
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let mut source = String::new();
+
+        prog.prolog_print(&mut source)?;
+        
+        let mut file = File::create("__test__listy.pl")?;
+        write!(file, "{}", source)?;
+        
+        Command::new("swipl")
+            .arg("__test__listy.pl")
+            .write_stdin("[__test__listy].\nhead([[1, 2], 3], X).")
+            .assert()
+            .stdout(contains("X = [1, 2]"));
+        
+        Command::new("swipl")
+            .arg("__test__listy.pl")
+            .write_stdin("[__test__listy].\nsameleading([1, 1, 200]).")
+            .assert()
+            .stdout(contains("true."));
+        
+        Command::new("swipl")
+            .arg("__test__listy.pl")
+            .write_stdin("[__test__listy].\nsamehead([1, 2], [1, 3]).")
+            .assert()
+            .stdout(contains("true."));
+
+        std::fs::remove_file("__test__listy.pl")?;
+
+        Ok(())
+    }
+    
+    #[test]
+    pub fn test_misc() -> Result<(), Box<dyn std::error::Error>> {
+        let program_input =
+r#"
+transform(z) {
+    relate ((z + 2) * 3 / 4)
+};
+aroundzero(x) {
+    x < 1
+    x > -1
+    x <= 1
+    x >= -1
+    x != 1
+    x == 0
+};
+"#.to_string();
+        let pairs = BevelParser::parse(Rule::program, &program_input)?;
+
+        let prog = parse_program(pairs, program_input.as_ref());
+
+        let mut source = String::new();
+
+        prog.prolog_print(&mut source)?;
+        
+        let mut file = File::create("__test__misc.pl")?;
+        write!(file, "{}", source)?;
+        
+        Command::new("swipl")
+            .arg("__test__misc.pl")
+            .write_stdin("[__test__misc].\ntransform(10, X).")
+            .assert()
+            .stdout(contains("X = 9"));
+        
+        Command::new("swipl")
+            .arg("__test__misc.pl")
+            .write_stdin("[__test__misc].\naroundzero(0).")
+            .assert()
+            .stdout(contains("true."));
+        
+        std::fs::remove_file("__test__misc.pl")?;
+
+        Ok(())
+    }
+}

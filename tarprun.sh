@@ -1,1 +1,1 @@
-docker run --security-opt seccomp=unconfined -v "${PWD}:/volume" xd009642/tarpaulin
+docker run --security-opt seccomp=unconfined -v "${PWD}:/volume" torrencem/beveltest
