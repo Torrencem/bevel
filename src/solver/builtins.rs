@@ -4,7 +4,7 @@ use crate::solver::solve::*;
 
 use crate::solver::unify::compute_most_gen_unifier;
 
-pub type Builtin = fn(&CompoundTerm, &SolverState) -> Option<Unifier>;
+pub type Builtin = fn(&CompoundTerm) -> Option<Unifier>;
 
 pub fn builtins() -> HashMap<String, Builtin> {
     let mut res = HashMap::new();
@@ -35,14 +35,14 @@ pub fn builtins() -> HashMap<String, Builtin> {
     res
 }
 
-pub fn builtin_eq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_eq(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
     compute_most_gen_unifier(vec![(a, b)])
 }
 
-pub fn builtin_add(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_add(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 3);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -84,7 +84,7 @@ pub fn builtin_add(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_sub(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_sub(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 3);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -126,7 +126,7 @@ pub fn builtin_sub(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_mul(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_mul(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 3);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -168,7 +168,7 @@ pub fn builtin_mul(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_div(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_div(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 3);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -210,7 +210,7 @@ pub fn builtin_div(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_mod(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_mod(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 3);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -239,7 +239,7 @@ pub fn builtin_mod(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
 }
 
 
-pub fn builtin_gt(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_gt(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -258,7 +258,7 @@ pub fn builtin_gt(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier>
     }
 }
 
-pub fn builtin_lt(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_lt(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -277,7 +277,7 @@ pub fn builtin_lt(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier>
     }
 }
 
-pub fn builtin_leq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_leq(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -296,7 +296,7 @@ pub fn builtin_leq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_geq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_geq(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -315,7 +315,7 @@ pub fn builtin_geq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     }
 }
 
-pub fn builtin_equ(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_equ(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -357,7 +357,7 @@ fn equal_as_terms(a: &Term, b: &Term) -> bool {
     }
 }
 
-pub fn builtin_neq(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier> {
+pub fn builtin_neq(cterm: &CompoundTerm) -> Option<Unifier> {
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
@@ -438,7 +438,14 @@ aroundzero(x) {
             let query = solver::Query {
                 goals: as_terms
             };
-            let solution = solver::solve::solve(&prog_rules, query);
+            let mut state = solver::solve::new_solver_state(query);
+            let solution = solver::solve::solve(&prog_rules, solver::solve::SolverState {
+                master: &mut state.master,
+                curr_query: &mut state.curr_query,
+                new_query: &mut state.new_query,
+                fact_indx: &mut state.fact_indx,
+                choice_points: &mut state.choice_points,
+            });
             match solution {
                 Some(solution) => {
                     let asstr = solver::fmt_unifier(&solution);

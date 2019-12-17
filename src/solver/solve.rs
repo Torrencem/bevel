@@ -6,24 +6,42 @@ use crate::REPL_FRAME_ID;
 use rand::prelude::RngCore;
 use rand::{thread_rng};
 
-pub struct SolverState<'a> {
-    pub master: &'a mut Unifier,
-    pub curr_query: &'a Query,
-    pub new_query: &'a mut Query,
-    pub fact_indx: &'a mut usize,
+pub struct SolverStateOwner {
+    pub master: Unifier,
+    pub curr_query: Query,
+    pub new_query: Query,
+    pub fact_indx: usize,
+    pub choice_points: Vec<(Unifier, Query, usize)>,
 }
 
-pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
+pub fn new_solver_state<'a>(query: Query) -> SolverStateOwner {
+    SolverStateOwner {
+        master: Unifier::new(),
+        curr_query: query,
+        new_query: Query { goals: vec![] },
+        fact_indx: 0,
+        choice_points: vec![]
+    }
+}
+
+pub struct SolverState<'a> {
+    pub master: &'a mut Unifier,
+    pub curr_query: &'a mut Query,
+    pub new_query: &'a mut Query,
+    pub fact_indx: &'a mut usize,
+    pub choice_points: &'a mut Vec<(Unifier, Query, usize)>,
+}
+
+pub fn solve(facts: &Rules, resume_state: SolverState) -> Option<Unifier> {
     let mut rng = thread_rng();
     let builtins = builtins();
-    let mut fact_indx: usize = 0;
-    let mut master: Unifier = Unifier::new();
-    let mut curr_query: Query = query;
-    let mut new_query: Query = Query { goals: vec![] };
+    let fact_indx: &mut usize = resume_state.fact_indx;
+    let master: &mut Unifier = resume_state.master;
+    let curr_query: &mut Query = resume_state.curr_query;
+    let new_query: &mut Query = resume_state.new_query;
     // A stack of querys, states, and fact indices
-    let mut choice_points: Vec<(Unifier, Query, usize)> = Vec::new();
+    let choice_points: &mut Vec<(Unifier, Query, usize)> = resume_state.choice_points;
     loop {
-        // dbg!(&curr_query);
         match curr_query.goals.get(0) {
             None => {
                 let unif = solve_unifier(&master);
@@ -34,7 +52,6 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                         filtered.insert(key.clone(), val.clone());
                     }
                 }
-                // dbg!(&filtered);
                 return Some(filtered)
             },
             Some(goal) => {
@@ -45,23 +62,17 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                     match builtins.get(&cterm.name) {
                         None => {},
                         Some(builtin) => {
-                            let my_state = SolverState {
-                                master: &mut master,
-                                curr_query: &curr_query,
-                                new_query: &mut new_query,
-                                fact_indx: &mut fact_indx,
-                            };
                             let builtin_res =
-                                builtin(&cterm, &my_state);
+                                builtin(&cterm);
                             match builtin_res {
                                 None => {
                                     // backtrack
                                     match choice_points.pop() {
                                         None => return None,
                                         Some(choice_point) => {
-                                            master = choice_point.0;
-                                            curr_query = choice_point.1;
-                                            fact_indx = choice_point.2;
+                                            *master = choice_point.0;
+                                            *curr_query = choice_point.1;
+                                            *fact_indx = choice_point.2;
                                             continue;
                                         }
                                     }
@@ -78,8 +89,8 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                                                         copy.substitute_all(&unifier);
                                                         copy
                                                      }).collect();
-                                    new_query = Query { goals: new_query_vec };
-                                    fact_indx = 0;
+                                    *new_query = Query { goals: new_query_vec };
+                                    *fact_indx = 0;
                                     skip = true;
                                     nomatching = false;
                                 },
@@ -90,19 +101,19 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                 // Find a clause that matches
                 // the current goal
                 if !skip {
-                    for clause in facts.contents[fact_indx..].iter() {
+                    for clause in facts.contents[*fact_indx..].iter() {
                         // println!("unify: {:?},\n{:?}", &goal, &clause.gives);
                         let unification =
                             compute_most_gen_unifier(vec![(goal.clone(), Term::Compound(clause.gives.clone()))]);
                         match unification {
-                            None => { fact_indx += 1; },
+                            None => { *fact_indx += 1; },
                             Some(unifier) => {
                                 let mut unifier = solve_unifier(&unifier);
                                 // This clause matches!
                                 nomatching = false;
                                 // choose to take it
                                 choice_points.push((
-                                    master.clone(), curr_query.clone(), fact_indx + 1
+                                    master.clone(), curr_query.clone(), *fact_indx + 1
                                 ));
                                 let new_frame_id = rng.next_u32();
                                 for (_k, v) in unifier.iter_mut() {
@@ -114,7 +125,7 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                                 for (k, v) in unifier.iter() {
                                     master.insert(k.clone(), v.clone());
                                 }
-                                master = solve_unifier(&master);
+                                *master = solve_unifier(&master);
                                 let mut new_query_vec: Vec<Term> = clause.requires.goals.clone()
                                         .iter()
                                         .map(|goal| {
@@ -131,8 +142,8 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                                                     copy.substitute_all(&unifier);
                                                     copy
                                                  }).collect());
-                                new_query = Query { goals: new_query_vec };
-                                fact_indx = 0;
+                                *new_query = Query { goals: new_query_vec };
+                                *fact_indx = 0;
                                 break;
                             }
                         }
@@ -142,16 +153,16 @@ pub fn solve(facts: &Rules, query: Query) -> Option<Unifier> {
                     match choice_points.pop() {
                         None => return None,
                         Some(choice_point) => {
-                            master = choice_point.0;
-                            curr_query = choice_point.1;
-                            fact_indx = choice_point.2;
+                            *master = choice_point.0;
+                            *curr_query = choice_point.1;
+                            *fact_indx = choice_point.2;
                             continue;
                         }
                     }
                 }
             }
         }
-        curr_query = new_query.clone();
+        *curr_query = new_query.clone();
     }
 }
 

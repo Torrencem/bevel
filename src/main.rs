@@ -30,7 +30,7 @@ use clap::{Arg, App};
 use error::Error;
 use std::fs;
 use std::process::exit;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use prolog_print::PrologPrint;
 use linefeed::{Interface, ReadResult};
 
@@ -114,7 +114,14 @@ fn main() {
                 let query = solver::Query {
                     goals: as_terms
                 };
-                let solution = solver::solve::solve(&prog_rules, query);
+                let mut state = solver::solve::new_solver_state(query);
+                let solution = solver::solve::solve(&prog_rules, solver::solve::SolverState {
+                    master: &mut state.master,
+                    curr_query: &mut state.curr_query,
+                    new_query: &mut state.new_query,
+                    fact_indx: &mut state.fact_indx,
+                    choice_points: &mut state.choice_points,
+                });
                 
                 match &solution {
                     None => println!("fail"),
@@ -129,6 +136,7 @@ fn main() {
                 }
             }
         } else {
+            println!();
             let reader = Interface::new("bevel").expect("Error setting up REPL loop. Something's gone very wrong!");
 
             reader.set_prompt("?#> ").expect("");
@@ -155,18 +163,46 @@ fn main() {
                 let query = solver::Query {
                     goals: as_terms
                 };
-                let solution = solver::solve::solve(&prog_rules, query);
                 
-                match &solution {
-                    None => println!("fail"),
-                    Some(solution) => {
-                        let s = solver::fmt_unifier(&solution);
-                        if s.trim().len() == 0 {
-                            println!("success");
-                        } else {
-                            println!("{}", s);
-                        }
-                    },
+                let mut state = solver::solve::new_solver_state(query);
+                let mut line = String::new();
+                let stdin = io::stdin();
+                while line != "q".to_string() {
+                    let solution = solver::solve::solve(&prog_rules, solver::solve::SolverState {
+                        master: &mut state.master,
+                        curr_query: &mut state.curr_query,
+                        new_query: &mut state.new_query,
+                        fact_indx: &mut state.fact_indx,
+                        choice_points: &mut state.choice_points,
+                    });
+                    
+                    match &solution {
+                        None => { println!("fail"); break; },
+                        Some(solution) => {
+                            let s = solver::fmt_unifier(&solution);
+                            if s.trim().len() == 0 {
+                                println!("success");
+                                break;
+                            } else {
+                                print!("{} ", s);
+                                io::stdout().flush().unwrap();
+
+                                match state.choice_points.pop() {
+                                    None => {
+                                        println!("fail");
+                                        break;
+                                    },
+                                    Some(choice_point) => {
+                                        state.master = choice_point.0;
+                                        state.curr_query = choice_point.1;
+                                        state.fact_indx = choice_point.2;
+                                    }
+                                }
+                            }
+                        },
+                    }
+                    
+                    stdin.lock().read_line(&mut line).unwrap();
                 }
             }
         }
@@ -270,7 +306,14 @@ swaptwo([x, y]) ~ [y, x];
             let query = solver::Query {
                 goals: as_terms
             };
-            let solution = solver::solve::solve(&prog_rules, query);
+            let mut state = solver::solve::new_solver_state(query);
+            let solution = solver::solve::solve(&prog_rules, solver::solve::SolverState {
+                master: &mut state.master,
+                curr_query: &mut state.curr_query,
+                new_query: &mut state.new_query,
+                fact_indx: &mut state.fact_indx,
+                choice_points: &mut state.choice_points,
+            });
             match solution {
                 Some(solution) => {
                     let asstr = solver::fmt_unifier(&solution);
