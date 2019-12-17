@@ -319,14 +319,37 @@ pub fn builtin_equ(cterm: &CompoundTerm, _state: &SolverState) -> Option<Unifier
     assert!(cterm.args.len() == 2);
     let a = cterm.args[0].clone();
     let b = cterm.args[1].clone();
+    if equal_as_terms(&a, &b) {
+        Some(Unifier::new())
+    } else {
+        None
+    }
+}
+
+fn equal_as_terms(a: &Term, b: &Term) -> bool {
     match (a, b) {
         (Term::Number(a),
         Term::Number(b)) => {
-            if a == b {
-                Some(Unifier::new())
-            } else {
-                None
+            a == b
+        },
+        (Term::Atom(a),
+        Term::Atom(b)) => {
+            a == b
+        },
+        (Term::List(ListTerm {
+            front: f1,
+            tail: ListTail::End
+        }),
+        Term::List(ListTerm {
+            front: f2,
+            tail: ListTail::End
+        })) => {
+            for i in 0..f1.len() {
+                if !equal_as_terms(&f1[i], &f2[i]) {
+                    return false;
+                }
             }
+            return true;
         },
         _ => {
             panic!("arguments to arithmetic not defined enough! \nthis will be a non-fatal error in the future")

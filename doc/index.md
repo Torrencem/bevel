@@ -54,6 +54,6 @@ common_element(la, lb) {
 };
 ```
 
-In this example, for the `common_element` relation, we require that anything that satisfies our relation is both an element of `la` and an element of `lb`. Indeed, using our relations, whenever we want to require a term `x` to be a member of two lists, we can write either `common_element(la, lb, x)` or perhaps more readably `x ~ common_element(la, lb)` (these examples will work in the exact same way).
+In this example, for the `common_element` relation, we require that anything that satisfies our relation is both an element of `la` and an element of `lb`. Indeed, using our relations, whenever we want to require a term `x` to be a member of two lists, we can write either `common_element(la, lb, x)` or more readably `x ~ common_element(la, lb)` (these examples will work in the exact same way).
 
-So, this example provides insight into how declarative programming is powerful: `element` acts somewhat like a function, but has "multiple outputs", and so is similar to a generator. Unlike a generator, no special syntax is needed to obtain all possible values from `element`, and the Bevel runtime will attempt to choose a value which will satisfy the contexts requirements as well.
+So, this example provides insight into how declarative programming is powerful: `element` acts somewhat like a function, but has "multiple outputs", and so is similar to a generator. Unlike a generator, no special syntax is needed to obtain all possible values from `element`, and the Bevel runtime will attempt to choose a value which will satisfy the context's requirements as well.

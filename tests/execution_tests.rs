@@ -126,13 +126,14 @@ samehead((x:_)) ~ (x:_);
         .success()
         .stdout("success\n");
     
-    // Command::cargo_bin("bevel")? // TODO: implement == for lists
-    //     .arg(file.path())
-    //     .arg("-i")
-    //     .write_stdin("x ~ head([[1, 2], 3]), sameleading([x, x, 200])")
-    //     .assert()
-    //     .success()
-    //     .stdout("success\n");
+    Command::cargo_bin("bevel")?
+        .arg(file.path())
+        .arg("-i")
+        .write_stdin("x ~ head([[1, 2], 3]), y ~ [1, 1+1*1], sameleading([x, y, 200])")
+        .assert()
+        .success()
+        .stdout(contains("x = [1, 2]"))
+        .stdout(contains("y = [1, 2]"));
     
     Command::cargo_bin("bevel")?
         .arg(file.path())
