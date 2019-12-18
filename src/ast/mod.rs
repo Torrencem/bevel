@@ -79,9 +79,22 @@ pub trait ASTVisitor<Return> {
             },
             StatementNode::Relation(rcallnode) => {
                 res.append(&mut self.visit_relcall(&rcallnode));
-            }
+            },
+            StatementNode::TryOr(trnode) => {
+                res.append(&mut self.visit_tryor(&trnode));
+            },
+            StatementNode::Succeed => res.append(&mut self.visit_succeed()),
+            StatementNode::Fail => res.append(&mut self.visit_fail()),
         }
         res
+    }
+
+    fn visit_succeed(&mut self) -> Vec<Return> {
+        vec![]
+    }
+
+    fn visit_fail(&mut self) -> Vec<Return> {
+        vec![]
     }
 
     fn visit_assignment(&mut self, assignment: &AssignmentNode) -> Vec<Return> {
@@ -109,6 +122,14 @@ pub trait ASTVisitor<Return> {
         let mut res: Vec<Return> = vec![];
         res.append(&mut self.visit_expr(&bfact.lhs));
         res.append(&mut self.visit_expr(&bfact.rhs));
+        res
+    }
+
+    fn visit_tryor(&mut self, trnode: &TryOrNode) -> Vec<Return> {
+        let mut res: Vec<Return> = vec![];
+        for block in trnode.blocks.iter() {
+            res.append(&mut self.visit_block(&block));
+        }
         res
     }
 
@@ -193,6 +214,13 @@ pub fn find_num_results<'p>(bnode: &BlockNode<'p>) -> usize {
     for statement in bnode.statements.iter() {
         if let StatementNode::Relate(rnode) = statement {
             return rnode.result.len();
+        } else if let StatementNode::TryOr(trnode) = statement {
+            for block in trnode.blocks.iter() {
+                let val = find_num_results(&block);
+                if val > 0 {
+                    return val;
+                }
+            }
         }
     }
     return 0;
@@ -221,6 +249,9 @@ pub enum StatementNode<'p> {
     Refute(RefuteNode<'p>),
     BinaryFact(BinaryFactNode<'p>),
     Relation(RelationCallNode<'p>),
+    TryOr(TryOrNode<'p>),
+    Succeed,
+    Fail,
 }
 
 #[derive(Debug)]
@@ -258,6 +289,12 @@ pub enum BinaryFactOperation {
     Geq,
     Equ,
     Neq,
+}
+
+#[derive(Debug)]
+pub struct TryOrNode<'p> {
+    pub span: Span<'p>,
+    pub blocks: Vec<BlockNode<'p>>,
 }
 
 #[derive(Debug)]

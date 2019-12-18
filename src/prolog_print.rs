@@ -156,6 +156,13 @@ impl<'p> PrologPrint for StatementNode<'p> {
             StatementNode::Refute(rnode) => rnode.prolog_print(w)?,
             StatementNode::BinaryFact(bfnode) => bfnode.prolog_print(w)?,
             StatementNode::Relation(rnode) => rnode.prolog_print(w)?,
+            StatementNode::TryOr(trnode) => trnode.prolog_print(w)?,
+            StatementNode::Succeed => {
+                write!(w, "true")?;
+            },
+            StatementNode::Fail => {
+                write!(w, "false")?;
+            }
         }
         Ok(())
     }
@@ -259,6 +266,20 @@ impl<'p> PrologPrint for BinaryFactNode<'p> {
             BinaryFactOperation::Neq => "\\==",
         };
         write!(w, "{} {} {}", leftval, op, rightval)?;
+        Ok(())
+    }
+}
+
+impl<'p> PrologPrint for TryOrNode<'p> {
+    fn prolog_print<W: Write>(&self, w: &mut W) -> Result<()> {
+        write!(w, "(")?;
+        for i in 0..self.blocks.len() {
+            self.blocks[i].prolog_print(w)?;
+            if i != self.blocks.len() - 1 {
+                write!(w, "\n  -> true\n;  ")?;
+            }
+        }
+        write!(w, ")")?;
         Ok(())
     }
 }

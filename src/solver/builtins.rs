@@ -32,6 +32,8 @@ pub fn builtins() -> HashMap<String, Builtin> {
                builtin_equ as Builtin);
     res.insert("!=".to_string(),
                builtin_neq as Builtin);
+    res.insert("print".to_string(),
+               builtin_print as Builtin);
     res
 }
 
@@ -374,6 +376,19 @@ pub fn builtin_neq(cterm: &CompoundTerm) -> Option<Unifier> {
             panic!("arguments to arithmetic not defined enough! \nthis will be a non-fatal error in the future")
         }
     }
+}
+
+pub fn builtin_print(cterm: &CompoundTerm) -> Option<Unifier> {
+    let mut first = true;
+    for term in cterm.args.iter() {
+        if first {
+            print!("{}", term);
+        } else {
+            print!("\t{}", term);
+        }
+    }
+    println!();
+    Some(Unifier::new())
 }
 
 #[cfg(test)]

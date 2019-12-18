@@ -1,0 +1,43 @@
+
+fbuzz(x) {
+	try {
+		x % 3 == 0
+		x % 2 == 0
+		relate 'fizzbuzz
+	} or {
+		x % 2 == 0
+		relate 'fizz
+	} or {
+		x % 3 == 0
+		relate 'buzz
+	} or {
+		relate x
+	}
+};
+
+pfbuzz(_) {
+	try {
+		x ~ between(1, 100)
+		writeln(fbuzz(x))
+		fail
+	} or { succeed }
+};
+
+# fbuzz(X, Y) :-
+#  (  X mod 3 =:= 0, X mod 2 =:= 0, Y = fizzbuzz
+#  -> true
+#  ;  X mod 3 =:= 0, Y = fizz
+#  -> true
+#  ;  X mod 2 =:= 0, Y = buzz
+#  -> true
+#  ;  Y = X
+#  ).
+
+# composite(n) { 
+# 	f ~ between(2, n - 1)
+# 	n % f == 0
+# };
+#
+# prime(n) {
+# 	refute composite(n)
+# };
