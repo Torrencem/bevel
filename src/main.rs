@@ -167,7 +167,7 @@ fn main() {
                 let mut state = solver::solve::new_solver_state(query);
                 let mut line = String::new();
                 let stdin = io::stdin();
-                while line != "q".to_string() {
+                while !line.starts_with("q") {
                     let solution = solver::solve::solve(&prog_rules, solver::solve::SolverState {
                         master: &mut state.master,
                         curr_query: &mut state.curr_query,

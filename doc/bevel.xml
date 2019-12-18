@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd"
+[
+	<!ENTITY bvIdent "[a-zA-Z_]*">
+	<!ENTITY int "[0-9]([0-9_]*[0-9])?">
+]>
+<language name="Bevel" section="Scientific"
+	version="1" mimetype="text/bevel"
+	indenter="cstyle"
+	extensions="*.bevel;*.bv"
+	license="MIT">
+<highlighting>
+	<list name="keywords">
+		<item>refute</item>
+		<item>relate</item>
+	</list>
+	<contexts>
+		<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+			<DetectSpaces/>
+			<AnyChar String="{};+-*~,/%&lt;&gt;" attribute="Operator"/>
+			<keyword String="keywords" attribute="Keyword" context="#stay"/>
+			<RegExpr String="&apos;&bvIdent;(?!&apos;)" attribute="Atom"/>
+			<RegExpr String="\b[0-9][0-9_]*((\.[0-9][0-9_]*)?([eE][\+\-]?[0-9_]+)?)\b" attribute="Number" context="#stay"/>
+			<DetectChar char="{" attribute="Symbol" context="#stay" beginRegion="Brace" />
+			<DetectChar char="}" attribute="Symbol" context="#stay" endRegion="Brace" />
+			<DetectChar char="#" attribute="Comment" context="Comment1"/>
+		</context>
+		<context attribute="Comment" lineEndContext="#pop" name="Comment1">
+		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Operator"    defStyleNum="dsOperator"/>
+		<itemData name="Normal Text" defStyleNum="dsNormal"/>
+		<itemData name="Keyword"     defStyleNum="dsKeyword" spellChecking="0"/>
+		<itemData name="Comment"     defStyleNum="dsComment"/>
+		<itemData name="Atom"        defStyleNum="dsOthers" spellChecking="0"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<comments>
+		<comment name="singleLine" start="#" />
+	</comments>
+	<keywords casesensitive="1" />
+</general>
+</language>

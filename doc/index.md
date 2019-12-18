@@ -19,7 +19,7 @@ fib(n) {
 };
 ```
 
-To run this example, save it to a file called `fib.bv`, and then run `bevel fib.bv` from the command line. You'll then see a read-eval-print prompt, which you can type queries such as `x ~ fib(7)` to compute relations.
+To run this example, save it to a file called `fib.bv`, and then run `bevel fib.bv` from the command line. You'll then see a read-eval-print prompt, which you can type queries such as `x ~ fib(7)` to compute relations. In the REPL loop, when you enter a query, you can type `q` to accept a solution to the query, or hit `enter` to trigger an artificial failure and compute any other solutions. This information isn't very relevent to the Fibonacci example.
 
 ## Fibonacci Explanation
 
@@ -54,6 +54,21 @@ common_element(la, lb) {
 };
 ```
 
-In this example, for the `common_element` relation, we require that anything that satisfies our relation is both an element of `la` and an element of `lb`. Indeed, using our relations, whenever we want to require a term `x` to be a member of two lists, we can write either `common_element(la, lb, x)` or more readably `x ~ common_element(la, lb)` (these examples will work in the exact same way).
+In this example, for the `common_element` relation, we require that anything that satisfies our relation is both an element of `la` and an element of `lb`. Indeed, using our relations, whenever we want to require a term `x` to be a member of two lists, we can write either `common_element(la, lb, x)` or more readably `x ~ common_element(la, lb)` (these examples will work in the exact same way). For example, running `x ~ common_element([1, 2, 3], [3, 4, 1])` in the REPL loop, and hitting enter through all the solutions, will yield `x = 1` and `x = 3`
 
 So, this example provides insight into how declarative programming is powerful: `element` acts somewhat like a function, but has "multiple outputs", and so is similar to a generator. Unlike a generator, no special syntax is needed to obtain all possible values from `element`, and the Bevel runtime will attempt to choose a value which will satisfy the context's requirements as well.
+
+## Differences from Prolog
+
+If you've used Prolog before, you might have noticed some quality of life improvements in readability and syntax. Firstly, every identifier (whether or not it begins with a capital letter) is an unknown. If you want an `atom`, the syntax is given by `'ident`. For example, take the following program:
+
+```bevel
+parent('mark) ~ 'dad;
+parent('dad) ~ 'gdad;
+grandparent(x) {
+	relate parent(parent(x))
+};
+
+# Query: who ~ grandparent('mark)
+# Solution: who = 'gdad
+```
