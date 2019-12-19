@@ -17,7 +17,7 @@ syn match bvAtom "'\w\(\w\)*"
 syn match bvProc "\w\(\w\)*("he=e-1,me=e-1
 syn match bvOperator display "\%(+\|-\|/\|*\|=\|>\|<\|\~\|!\|:\|%\)=\?"
 
-syn keyword bvKeyword relate refute try or fail succeed
+syn keyword bvKeyword relate refute
 
 let b:current_syntax = "bv"
 
@@ -26,7 +26,7 @@ hi def link bvNumber Constant
 hi def link bvAtom Constant
 hi def link bvProc Function
 hi def link bvComment Comment
-hi def link bvOperator Special
+hi def link bvOperator Operator
 
 setglobal comments="#"
 setglobal commentstring="# %s"

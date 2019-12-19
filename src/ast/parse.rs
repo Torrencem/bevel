@@ -264,11 +264,6 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             Rule::refute => {
                 StatementNode::Refute(RefuteNode::parse(pair, source))
             },
-            Rule::try_block => {
-                StatementNode::TryOr(TryOrNode::parse(pair, source))
-            },
-            Rule::fail => { StatementNode::Fail },
-            Rule::succeed => { StatementNode::Succeed },
             x => panic!("unexpected: {:?}", x)
         }
     }
@@ -280,8 +275,6 @@ impl<'p> ParseNode<'p> for StatementNode<'p> {
             StatementNode::Refute(rnode) => &rnode.span,
             StatementNode::BinaryFact(bfnode) => &bfnode.span,
             StatementNode::Relation(rcallnode) => &rcallnode.span,
-            StatementNode::TryOr(trnode) => &trnode.span,
-            StatementNode::Succeed | StatementNode::Fail => unreachable!(),
         }
     }
 }
@@ -448,27 +441,6 @@ impl<'p> ParseNode<'p> for BinaryFactNode<'p> {
                 }
             },
             x => panic!("unexpected: {:?}", x)
-        }
-    }
-
-    fn as_span(&self) -> &Span<'p> {
-        &self.span
-    }
-}
-
-impl<'p> ParseNode<'p> for TryOrNode<'p> {
-    fn parse(pair: Pair<'p, Rule>, source: &'p str) -> Self {
-        assert!(pair.as_rule() == Rule::try_block);
-        let span: Span<'p> = new_span(pair.as_span(), source);
-        let pairs = pair.into_inner();
-        let mut blocks = vec![];
-
-        for pair in pairs {
-            blocks.push(BlockNode::parse(pair, source));
-        }
-        TryOrNode {
-            span: span,
-            blocks: blocks
         }
     }
 

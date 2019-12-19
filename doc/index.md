@@ -25,7 +25,7 @@ To run this example, save it to a file called `fib.bv`, and then run `bevel fib.
 
 Similarly to Prolog, a program is a list of facts, which describe relationships between terms. In this case, by saying `fib(0) ~ 0`, we're expressing that `0 ~ 0` where `~` is the `fib` relation. In Prolog, this would be expressed as `fib(0, 0).` Indeed, in Bevel, you can also write `fib(0, 0)`, which is equivelent to what was written, but for clarity it's encouraged to put "outputs" of relations at the end of lists of terms, and use the more specialized syntax as in our example. 
 
-The final fact, which starts with `fib(n)`, expresses a requirement in order for the relationship `n ~ result` to hold. What follows in the block is a list of requirement relations that must be held. The final, `relate fib(n - 1) + fib(n - 2)`, is similar to `return` in imperative programming languages, since it requires the final arguments (the "outputs") of the fib relationship to unify with `fib(n - 1) + fib(n - 2)`.
+The final fact, which starts with `fib(n)`, expresses a requirement in order for the relationship `n ~ result` to hold. What follows in the block is a list of requirement relations that must be held. The final, `relate fib(n - 1) + fib(n - 2)`, is similar to `return` in imperative programming languages, since it requires the final argument (the "output") of the fib relationship to be equal to `fib(n - 1) + fib(n - 2)`.
 
 Running the previous example in Prolog-print mode (`bevel -p file.bv`), we can see an equivelent example of Prolog code, which is essentially a du-sugared Bevel program:
 

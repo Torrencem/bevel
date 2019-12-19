@@ -129,8 +129,6 @@ pub fn parse_statement<'p>(statement: &StatementNode<'p>, frame_id: u32) -> Vec<
         StatementNode::Refute(_) => unimplemented!(),
         StatementNode::BinaryFact(brnode) => parse_bfactnode(&brnode, frame_id),
         StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode, frame_id),
-        StatementNode::TryOr(trnode) => unimplemented!(),
-        StatementNode::Succeed | StatementNode::Fail => unimplemented!(),
     }
 }
 
