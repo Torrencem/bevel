@@ -1,0 +1,55 @@
+
+divide([]) ~ ([], []);
+divide([x]) ~ ([x], []);
+divide((a:b:tail)) {
+	(ta, tb) ~ divide(tail)
+	relate ((a:ta), (b:tb))
+};
+
+merge([], x) ~ x;
+merge(x, []) {
+	length(x) > 0
+	relate x
+};
+merge((a:as), (b:bs)) {
+	a <= b
+	relate (a : merge(as, (b:bs)))
+};
+merge((a:as), (b:bs)) {
+	a > b
+	relate (b : merge((a:as), bs))
+};
+
+length([]) ~ 0;
+length((a:as)) {
+	relate length(as) + 1
+};
+
+append([], b) ~ b;
+append((a:as), b) {
+	relate (a : append(as, b))
+};
+
+mergeSort([]) ~ [];
+mergeSort([x]) ~ [x];
+mergeSort(l) {
+	length(l) >= 2
+	(a, b) ~ divide(l)
+	relate merge(mergeSort(a), mergeSort(b))
+};
+
+leaf(x) {
+	atom(x)
+};
+
+flatten([]) ~ [];
+flatten((h:tail)) {
+	leaf(h)
+	relate (h : flatten(tail))
+};
+flatten((h:tail)) {
+	refute leaf(h)
+	left ~ flatten(h)
+	right ~ flatten(tail)
+	relate append(left, right)
+};
