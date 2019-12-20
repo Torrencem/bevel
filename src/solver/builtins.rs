@@ -1,6 +1,5 @@
 
 use crate::solver::*;
-use crate::solver::solve::*;
 
 use crate::solver::unify::compute_most_gen_unifier;
 
@@ -32,6 +31,10 @@ pub fn builtins() -> HashMap<String, Builtin> {
                builtin_equ as Builtin);
     res.insert("!=".to_string(),
                builtin_neq as Builtin);
+    res.insert("writeln".to_string(),
+               builtin_writeln as Builtin);
+    res.insert("atom".to_string(),
+               builtin_atom as Builtin);
     res
 }
 
@@ -373,6 +376,30 @@ pub fn builtin_neq(cterm: &CompoundTerm) -> Option<Unifier> {
         _ => {
             panic!("arguments to arithmetic not defined enough! \nthis will be a non-fatal error in the future")
         }
+    }
+}
+
+pub fn builtin_writeln(cterm: &CompoundTerm) -> Option<Unifier> {
+    let mut first = true;
+    for term in cterm.args.iter() {
+        if first {
+            print!("{}", term);
+            first = false;
+        } else {
+            print!("\t{}", term);
+        }
+    }
+    println!();
+    Some(Unifier::new())
+}
+
+pub fn builtin_atom(cterm: &CompoundTerm) -> Option<Unifier> {
+    if cterm.args.len() > 1 {
+        panic!("Too many arguments passed to atom/1! \nthis will be a non-fatal error in the future");
+    }
+    match &cterm.args[0] {
+        Term::Atom(_) => Some(Unifier::new()),
+        _ => None,
     }
 }
 

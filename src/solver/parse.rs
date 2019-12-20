@@ -126,7 +126,7 @@ pub fn parse_statement<'p>(statement: &StatementNode<'p>, frame_id: u32) -> Vec<
     match &statement {
         StatementNode::Assignment(anode) => parse_assignment(&anode, frame_id),
         StatementNode::Relate(rnode) => parse_relate(&rnode, frame_id),
-        StatementNode::Refute(_) => unimplemented!(),
+        StatementNode::Refute(rfnode) => parse_refute(&rfnode, frame_id),
         StatementNode::BinaryFact(brnode) => parse_bfactnode(&brnode, frame_id),
         StatementNode::Relation(rcallnode) => parse_relationcall(&rcallnode, frame_id),
     }
@@ -316,6 +316,29 @@ pub fn parse_expr_name<'p>(expr: &ExpressionNode<'p>, frame_id: u32, res: &mut V
                             _ => panic!()
                         }
                     },
+                    ExpressionContents::Call { rel, args } => {
+                        let new_name = UnknownContents {
+                            name: format!("Tmp{}", iter::repeat(())
+                                .map(|()| rng.sample(Alphanumeric))
+                                .filter(|c| !c.is_digit(10))
+                                .take(6)
+                                .collect::<String>()),
+                            frame_id: frame_id
+                        };
+                        let mut names = vec![];
+                        for exprnode in args.iter() {
+                            names.push(Term::Unknown(parse_expr_name(exprnode, frame_id, res)));
+                        }
+                        names.push(Term::Unknown(new_name.clone()));
+                        res.push(Term::Compound(CompoundTerm {
+                            name: rel.name.clone(),
+                            args: names,
+                        }));
+                        ListTail::Unknown(UnknownContents {
+                            name: new_name.name.clone(),
+                            frame_id: frame_id
+                        })
+                    },
                     _ => panic!()
                 };
             let list_term = Term::List(ListTerm {
@@ -343,6 +366,20 @@ pub fn parse_relationcall<'p>(rcallnode: &RelationCallNode<'p>, frame_id: u32) -
     }
     let cterm = Term::Compound(CompoundTerm {
         name: rcallnode.rel.name.clone(),
+        args: names,
+    });
+    res.push(cterm);
+    res
+}
+
+pub fn parse_refute<'p>(rfnode: &RefuteNode<'p>, frame_id: u32) -> Vec<Term> {
+    let mut res = vec![];
+    let mut names = vec![];
+    for expr in rfnode.statement.args.iter() {
+        names.push(Term::Unknown(parse_expr_name(&expr, frame_id, &mut res)));
+    }
+    let cterm = Term::Refute(CompoundTerm {
+        name: rfnode.statement.rel.name.clone(),
         args: names,
     });
     res.push(cterm);

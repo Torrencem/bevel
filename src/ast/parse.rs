@@ -359,9 +359,9 @@ impl<'p> ParseNode<'p> for RefuteNode<'p> {
         let span: Span<'p> = new_span(pair.as_span(), source);
         match pair.as_rule() {
             Rule::refute => {
-                let statement_term = pair.into_inner().next().unwrap();
-                let result: StatementNode<'p> =
-                    StatementNode::parse(statement_term, source);
+                let rcall_term = pair.into_inner().next().unwrap();
+                let result: RelationCallNode<'p> =
+                    RelationCallNode::parse(rcall_term, source);
                 RefuteNode {
                     span: span,
                     statement: Box::new(result)

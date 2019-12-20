@@ -98,6 +98,28 @@ pub fn solve(facts: &Rules, resume_state: SolverState) -> Option<Unifier> {
                         }
                     }
                 }
+                if let Term::Refute(cterm) = goal {
+                    skip = true;
+                    // Try to solve "goal"
+                    let query = Query {
+                        goals: vec![Term::Compound(cterm.clone())],
+                    };
+                    let mut state = new_solver_state(query);
+                    let solution = solve(facts, SolverState {
+                        master: &mut state.master,
+                        curr_query: &mut state.curr_query,
+                        new_query: &mut state.new_query,
+                        fact_indx: &mut state.fact_indx,
+                        choice_points: &mut state.choice_points,
+                    });
+                    if let Some(_) = solution {
+                        nomatching = true;
+                    } else {
+                        nomatching = false;
+                    }
+                    new_query.goals = curr_query.goals[1..].iter()
+                        .cloned().collect();
+                }
                 // Find a clause that matches
                 // the current goal
                 if !skip {

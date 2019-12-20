@@ -26,7 +26,7 @@ hi def link bvNumber Constant
 hi def link bvAtom Constant
 hi def link bvProc Function
 hi def link bvComment Comment
-hi def link bvOperator Operator
+hi def link bvOperator Special
 
 setglobal comments="#"
 setglobal commentstring="# %s"

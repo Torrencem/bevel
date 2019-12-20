@@ -61,6 +61,7 @@ pub enum Term {
     Number(Rational32),
     List(ListTerm),
     Compound(CompoundTerm),
+    Refute(CompoundTerm),
 }
 
 impl fmt::Display for Term {
@@ -81,6 +82,9 @@ impl fmt::Display for Term {
             },
             Term::Compound(cterm) => {
                 write!(f, "{}", cterm)
+            },
+            Term::Refute(cterm) => {
+                write!(f, "refute {}", cterm)
             },
         }
     }
@@ -141,7 +145,7 @@ impl Term {
                     contents.frame_id = frame_id;
                 }
             },
-            Term::Compound(cterm) => {
+            Term::Compound(cterm) | Term::Refute(cterm) => {
                 for term in cterm.args.iter_mut() {
                     term.set_new_frame_id(frame_id);
                 }

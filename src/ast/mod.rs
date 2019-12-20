@@ -101,7 +101,7 @@ pub trait ASTVisitor<Return> {
 
     fn visit_refute(&mut self, refute: &RefuteNode) -> Vec<Return> {
         let mut res: Vec<Return> = vec![];
-        res.append(&mut self.visit_statement(&refute.statement));
+        res.append(&mut self.visit_relcall(&*refute.statement));
         res
     }
 
@@ -239,7 +239,7 @@ pub struct RelateNode<'p> {
 #[derive(Debug)]
 pub struct RefuteNode<'p> {
     pub span: Span<'p>,
-    pub statement: Box<StatementNode<'p>>,
+    pub statement: Box<RelationCallNode<'p>>,
 }
 
 #[derive(Debug)]

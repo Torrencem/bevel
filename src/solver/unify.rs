@@ -23,6 +23,18 @@ pub fn solve_unifier(unif: &Unifier) -> Unifier {
         }
         res.insert(key.clone(), result);
     }
+    // Fix issues like the following:
+    // x -> 1
+    // l -> [x]
+    // (should solve to)
+    // x -> 1
+    // l -> [1]
+    let unif2 = res.clone();  // Might be able to be better
+    for (key, val) in unif2.iter() {
+        for (_, val2) in res.iter_mut() {
+            val2.simple_substitution(key, val).unwrap();
+        }
+    }
     res
 }
 
@@ -149,6 +161,7 @@ pub fn compute_most_gen_unifier(goal: Goal) -> Option<Unifier> {
                 continue;
             },
             (Compound(_), _) => { return None; },
+            (Refute(_), _) => unreachable!(),
         }
         let mut done = true;
         // Since we haven't 'continue'd, that
@@ -200,7 +213,7 @@ impl Term {
                     item.simple_substitution(unknown, subs);
                 }
             },
-            Compound(cterm) => {
+            Compound(cterm) | Refute(cterm) => {
                 for item in cterm.args.iter_mut() {
                     item.simple_substitution(unknown, subs);
                 }
